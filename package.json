@@ -1,0 +1,42 @@
+{
+  "name": "audio-video-transcriber-server",
+  "version": "1.0.0",
+  "description": "Web-based audio/video transcription server using Sherpa-ONNX",
+  "main": "server.js",
+  "scripts": {
+    "start": "LD_LIBRARY_PATH=$PWD/node_modules/sherpa-onnx-linux-arm64:$LD_LIBRARY_PATH node server.js",
+    "cli": "LD_LIBRARY_PATH=$PWD/node_modules/sherpa-onnx-linux-arm64:$LD_LIBRARY_PATH node cli.js",
+    "dev": "LD_LIBRARY_PATH=$PWD/node_modules/sherpa-onnx-linux-arm64:$LD_LIBRARY_PATH nodemon server.js"
+  },
+  "keywords": [
+    "transcription",
+    "translate",
+    "audio",
+    "video",
+    "sherpa-onnx",
+    "subtitle",
+    "websocket",
+    "express"
+  ],
+  "author": "",
+  "license": "MIT",
+  "dependencies": {
+    "@ffmpeg-installer/ffmpeg": "^1.1.0",
+    "@ffprobe-installer/ffprobe": "^2.1.2",
+    "chalk": "^5.5.0",
+    "cli-progress": "^3.12.0",
+    "eta": "^3.5.0",
+    "express": "^5.1.0",
+    "sherpa-onnx-linux-arm64": "^1.12.8",
+    "sherpa-onnx-node": "^1.12.8",
+    "systeminformation": "^5.27.7",
+    "ws": "^8.18.3"
+  },
+  "devDependencies": {
+    "nodemon": "^3.1.10"
+  },
+  "engines": {
+    "node": ">=16.0.0"
+  },
+  "type": "module"
+}
