@@ -139,7 +139,7 @@ async function processFile(inputFile, idx, total) {
       duration = parseFloat(d.toString()) || 0;
       if (duration > 0) {
         bar = new cliProgress.SingleBar({
-          format: 'Progress: {percentage}% |' + chalk.yellow('{bar}') + '| {value_formatted}/{total_formatted}s [{duration_formatted}<{eta_formatted}, {speed}x]',
+          format: 'Progress: {percentage}% |' + chalk.yellow('{bar}') + '|  | {value}/{total}s |[{duration_formatted}<{eta_formatted}, {speed}x]',
           barCompleteChar: '\u2588',
           barIncompleteChar: '\u2591',
         });
@@ -166,7 +166,8 @@ async function processFile(inputFile, idx, total) {
       if (bar && duration) {
         const elapsed = (Date.now() - startTime) / 1000;
         const speed = elapsed > 0 ? processed / elapsed : 0;
-        bar.update(Math.min(processed, duration), { speed: speed.toFixed(2) });
+        // Use Math.floor to ensure integer values without decimal points
+        bar.update(Math.floor(Math.min(processed, duration)), { speed: speed.toFixed(2) });
       }
     });
 
