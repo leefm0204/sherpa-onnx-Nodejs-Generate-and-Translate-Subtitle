@@ -8,6 +8,7 @@
     "chalk": "^5.5.0",
     "cli-progress": "^3.12.0",
     "eta": "^3.5.0"
+    "sherpa-onnx-node": "^1.12.9"
   },
   "optionalDependencies": {
     "sherpa-onnx-linux-x64": "^1.12.9",
