@@ -256,3 +256,17 @@ async function processFile(inputFile, idx, total) {
   }
   console.log(`\n${chalk.green("All files processed.")}`);
 })();
+
+let currentFfmpegProcess = null;
+const gracefulShutdown = (signal) => {
+  console.log(`\nReceived ${signal}. Shutting down...`);
+  if (currentFfmpegProcess) {
+    console.log('Terminating active ffmpeg process...');
+    currentFfmpegProcess.kill('SIGKILL'); // Force kill ffmpeg
+  }
+  // Give a moment for the kill signal to be processed
+  setTimeout(() => process.exit(0), 100);
+};
+
+process.on('SIGINT', () => gracefulShutdown('SIGINT'));
+process.on('SIGTERM', () => gracefulShutdown('SIGTERM'));
