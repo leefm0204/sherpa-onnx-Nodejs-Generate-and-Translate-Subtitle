@@ -1,5 +1,5 @@
 {
-  "name": "sherpaonnxgenatransrt",
+  "name": "sherpaonnxgentransrt",
   "version": "1.0.0",
   "description": "2 to 3x faster Node.js scripts for generating subtitle compare to python and translating subtitles from audio/video files:",
   "dependencies": {
