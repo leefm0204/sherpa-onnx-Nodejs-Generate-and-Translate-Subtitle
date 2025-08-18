@@ -21,6 +21,11 @@ Generate and translate using Sherpa-Onnx node-addon-api and Google-translate.
 
 
 ### Generating Subtitles with Transcriber
+export LD_LIBRARY_PATH based on your arch. for example
+
+```bash
+export LD_LIBRARY_PATH=$PWD/node_modules/sherpa-onnx-linux-arm64:$LD_LIBRARY_PATH
+```
 
 To process all supported files in a directory:
 ```bash
