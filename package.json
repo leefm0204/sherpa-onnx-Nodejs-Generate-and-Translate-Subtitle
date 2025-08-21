@@ -1,31 +1,43 @@
 {
-  "name": "sherpaonnxgenatransrt",
+  "name": "audio-video-transcriber-server",
   "version": "1.0.0",
-  "description": "2 to 3x faster Node.js scripts for generating subtitle compare to python and translating subtitles from audio/video files:",
+  "description": "Web-based audio/video transcription server using Sherpa-ONNX",
+  "main": "server.js",
+  "scripts": {
+    "start": "LD_LIBRARY_PATH=$PWD/node_modules/sherpa-onnx-linux-arm64:$LD_LIBRARY_PATH node server.js",
+    "cli": "LD_LIBRARY_PATH=$PWD/node_modules/sherpa-onnx-linux-arm64:$LD_LIBRARY_PATH node cli.js",
+    "dev": "LD_LIBRARY_PATH=$PWD/node_modules/sherpa-onnx-linux-arm64:$LD_LIBRARY_PATH node server.js"
+  },
+  "keywords": [
+    "transcription",
+    "translate",
+    "audio",
+    "video",
+    "sherpa-onnx",
+    "subtitle",
+    "websocket",
+    "express"
+  ],
+  "author": "",
+  "license": "MIT",
   "dependencies": {
     "@ffmpeg-installer/ffmpeg": "^1.1.0",
     "@ffprobe-installer/ffprobe": "^2.1.2",
-    "chalk": "^5.5.0",
+    "chalk": "^5.6.0",
     "cli-progress": "^3.12.0",
-    "eta": "^3.5.0",
-    "sherpa-onnx-node": "^1.12.9"
-  },
-  "optionalDependencies": {
-    "sherpa-onnx-darwin-arm64": "^1.12.9",
-    "sherpa-onnx-darwin-x64": "^1.12.9",
+    "express": "^5.1.0",
+    "minimist": "^1.2.8",
     "sherpa-onnx-linux-arm64": "^1.12.9",
-    "sherpa-onnx-linux-x64": "^1.12.9",
-    "sherpa-onnx-win-ia32": "^1.12.9",
-    "sherpa-onnx-win-x64": "^1.12.9"
+    "sherpa-onnx-node": "^1.12.9",
+    "systeminformation": "^5.27.7",
+    "tmp": "^0.2.5",
+    "ws": "^8.18.3"
   },
   "devDependencies": {
-    "nodemon": "^3.1.10" 
+    "nodemon": "^3.1.10"
   },
   "engines": {
     "node": ">=16.0.0"
   },
-  "type": "module",
-  "scripts": {
-    "postinstall": "node -e \"try { require('fs').accessSync('node_modules/sherpa-onnx-' + process.platform + '-' + process.arch) } catch (e) { console.log('Installing appropriate sherpa-onnx package for ' + process.platform + '-' + process.arch); }\""
-  }
+  "type": "module"
 }

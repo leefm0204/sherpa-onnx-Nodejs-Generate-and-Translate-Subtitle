@@ -1,0 +1,1351 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Subtitle Generator & Translator</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap');
+
+        :root {
+            /* Dark Theme Colors - Professional & Modern */
+            --bg-primary: #0a0a0b;
+            --bg-secondary: #1a1a1d;
+            --bg-tertiary: #2d2d30;
+            --bg-elevated: #383838;
+            
+            /* Surface Colors */
+            --surface-primary: rgba(255, 255, 255, 0.03);
+            --surface-secondary: rgba(255, 255, 255, 0.06);
+            --surface-hover: rgba(255, 255, 255, 0.08);
+            --surface-active: rgba(255, 255, 255, 0.12);
+            
+            /* Text Colors */
+            --text-primary: #ffffff;
+            --text-secondary: rgba(255, 255, 255, 0.87);
+            --text-tertiary: rgba(255, 255, 255, 0.60);
+            --text-disabled: rgba(255, 255, 255, 0.38);
+            
+            /* Brand Colors */
+            --accent-primary: #6c5ce7;
+            --accent-secondary: #a29bfe;
+            --accent-gradient: linear-gradient(135deg, #667eea 0%, #764ba2 50%, #6c5ce7 100%);
+            
+            /* Semantic Colors */
+            --success: #00b894;
+            --success-bg: rgba(0, 184, 148, 0.1);
+            --warning: #fdcb6e;
+            --warning-bg: rgba(253, 203, 110, 0.1);
+            --error: #e84393;
+            --error-bg: rgba(232, 67, 147, 0.1);
+            --info: #74b9ff;
+            --info-bg: rgba(116, 185, 255, 0.1);
+            
+            /* Borders */
+            --border-subtle: rgba(255, 255, 255, 0.08);
+            --border-default: rgba(255, 255, 255, 0.12);
+            --border-emphasis: rgba(255, 255, 255, 0.20);
+            --border-bold: rgba(255, 255, 255, 0.30);
+            --border-white: rgba(255, 255, 255, 0.8);
+            
+            /* Shadows */
+            --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.4);
+            --shadow-md: 0 4px 20px rgba(0, 0, 0, 0.3);
+            --shadow-lg: 0 8px 40px rgba(0, 0, 0, 0.4);
+            --shadow-xl: 0 16px 60px rgba(0, 0, 0, 0.5);
+            
+            /* Gradients */
+            --gradient-bg: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            --gradient-accent: linear-gradient(135deg, #f093fb 0%, #f5576c 50%, #4facfe 100%);
+            --gradient-success: linear-gradient(135deg, #00b894 0%, #55a3ff 100%);
+            
+            /* Glass Effects */
+            --glass-bg: rgba(255, 255, 255, 0.05);
+            --glass-border: rgba(255, 255, 255, 0.1);
+            --backdrop-blur: blur(20px);
+            
+            /* Section Dividers */
+            --divider-color: rgba(255, 255, 255, 0.08);
+            --section-border: 1px solid var(--divider-color);
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+            background: var(--bg-primary);
+            color: var(--text-primary);
+            line-height: 1.6;
+            min-height: 100vh;
+            overflow-x: hidden;
+            font-feature-settings: 'cv11', 'ss01', 'ss02';
+        }
+
+        /* Advanced Background with Mesh Gradient */
+        body::before {
+            content: '';
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: 
+                radial-gradient(ellipse 80% 50% at 20% 40%, rgba(120, 119, 198, 0.15), transparent 60%),
+                radial-gradient(ellipse 60% 80% at 80% 60%, rgba(255, 119, 198, 0.12), transparent 50%),
+                radial-gradient(ellipse 100% 40% at 50% 20%, rgba(74, 144, 226, 0.08), transparent 70%),
+                radial-gradient(ellipse 40% 60% at 10% 80%, rgba(108, 92, 231, 0.10), transparent 40%);
+            pointer-events: none;
+            z-index: -2;
+        }
+
+        /* Animated Particles Background */
+        body::after {
+            content: '';
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-image: 
+                radial-gradient(2px 2px at 40px 60px, rgba(255, 255, 255, 0.1), transparent),
+                radial-gradient(2px 2px at 120px 25px, rgba(255, 255, 255, 0.1), transparent),
+                radial-gradient(1px 1px at 90px 40px, rgba(255, 255, 255, 0.1), transparent),
+                radial-gradient(1px 1px at 160px 30px, rgba(255, 255, 255, 0.1), transparent);
+            background-repeat: repeat;
+            background-size: 200px 100px;
+            animation: float 20s ease-in-out infinite;
+            pointer-events: none;
+            z-index: -1;
+        }
+
+        @keyframes float {
+            0%, 100% { transform: translateY(0px) rotate(0deg); }
+            50% { transform: translateY(-20px) rotate(180deg); }
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 2rem;
+            position: relative;
+            border: 1px solid var(--border-white);
+            border-radius: 20px;
+            margin-bottom: 2rem;
+        }
+
+        /* Divider for sections */
+        .section-divider {
+            height: 1px;
+            background: var(--divider-color);
+            margin: 3rem 0;
+            border: none;
+        }
+
+        /* System Info - Glassmorphism Design */
+        #system-info {
+            background: var(--glass-bg);
+            backdrop-filter: var(--backdrop-blur);
+            -webkit-backdrop-filter: var(--backdrop-blur);
+            border: 1px solid var(--glass-border);
+            border-radius: 16px;
+            padding: 1.25rem 2rem;
+            margin-bottom: 3rem;
+            font-size: 0.95rem;
+            color: var(--text-tertiary);
+            text-align: center;
+            font-family: 'SF Mono', 'Monaco', 'Cascadia Code', 'Roboto Mono', monospace;
+            box-shadow: var(--shadow-md);
+            position: relative;
+            overflow: hidden;
+            border: 1px solid var(--border-white);
+        }
+
+        #system-info::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 1px;
+            background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.3), transparent);
+        }
+
+        /* Header - Enhanced Typography */
+        header {
+            text-align: center;
+            margin-bottom: 4rem;
+            position: relative;
+        }
+
+        header h1 {
+            font-size: clamp(2.5rem, 5vw, 4rem);
+            font-weight: 800;
+            background: var(--gradient-accent);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            margin-bottom: 1rem;
+            letter-spacing: -0.02em;
+            line-height: 1.1;
+            position: relative;
+        }
+
+        header .subtitle {
+            font-size: 1.125rem;
+            color: var(--text-tertiary);
+            font-weight: 400;
+            max-width: 600px;
+            margin: 0 auto;
+            line-height: 1.7;
+        }
+
+        /* Main Content Layout */
+        .main-content {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 2rem;
+            margin-bottom: 3rem;
+        }
+
+        /* Section Headers */
+        .section-header {
+            text-align: center;
+            margin: 3rem 0 2rem 0;
+            position: relative;
+            border: 1px solid var(--border-white);
+            border-radius: 16px;
+            padding: 1.5rem;
+            background: var(--surface-primary);
+        }
+
+        .section-header h1 {
+            font-size: clamp(1.75rem, 4vw, 2.5rem);
+            font-weight: 700;
+            background: var(--gradient-accent);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            margin-bottom: 0.75rem;
+            letter-spacing: -0.01em;
+            line-height: 1.2;
+        }
+
+        .section-header .subtitle {
+            font-size: 1rem;
+            color: var(--text-tertiary);
+            font-weight: 400;
+            max-width: 600px;
+            margin: 0 auto;
+            line-height: 1.6;
+        }
+
+        /* Card - Advanced Glassmorphism */
+        .card {
+            background: var(--glass-bg);
+            backdrop-filter: var(--backdrop-blur);
+            -webkit-backdrop-filter: var(--backdrop-blur);
+            border: 1px solid var(--glass-border);
+            border-radius: 20px;
+            overflow: hidden;
+            box-shadow: var(--shadow-lg);
+            position: relative;
+            transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+            border: 1px solid var(--border-white);
+        }
+
+        .card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 1px;
+            background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
+        }
+
+        .card:hover {
+            transform: translateY(-8px) scale(1.02);
+            box-shadow: var(--shadow-xl);
+            border-color: var(--border-emphasis);
+        }
+
+        .card:hover::before {
+            background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.4), transparent);
+        }
+
+        /* Card Headers - Sophisticated Gradients */
+        .card-header {
+            padding: 1.75rem;
+            border-bottom: 1px solid var(--border-subtle);
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            position: relative;
+            overflow: hidden;
+            border: 1px solid var(--border-white);
+            border-bottom: 1px solid var(--border-white);
+        }
+
+        .transcription-header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        }
+
+        .translation-header {
+            background: linear-gradient(135deg, #f093fb 0%, #f5576c 50%, #4facfe 100%);
+        }
+
+        .status-header {
+            background: linear-gradient(135deg, #00b894 0%, #55a3ff 100%);
+        }
+
+        .card-header::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.1), transparent);
+            transition: left 0.6s;
+        }
+
+        .card:hover .card-header::before {
+            left: 100%;
+        }
+
+        .card-header h2 {
+            font-size: 1.375rem;
+            font-weight: 700;
+            color: white;
+            letter-spacing: -0.01em;
+            margin: 0;
+        }
+
+        .card-header i {
+            font-size: 1.5rem;
+            color: white;
+            opacity: 0.9;
+        }
+
+        .card-body {
+            padding: 2rem;
+        }
+
+        /* Input Styling - Modern & Clean */
+        .path-input-section {
+            display: flex;
+            flex-direction: column;
+            gap: 1.5rem;
+        }
+
+        .input {
+            padding: 1rem 1.25rem;
+            border: 2px solid var(--border-default);
+            border-radius: 12px;
+            background: var(--surface-secondary);
+            color: var(--text-primary);
+            font-size: 0.95rem;
+            font-family: inherit;
+            font-weight: 500;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            outline: none;
+            backdrop-filter: var(--backdrop-blur);
+            width: 100%;
+            margin-bottom: 1rem;
+            border: 1px solid var(--border-white);
+        }
+
+        .input:focus {
+            border-color: var(--accent-primary);
+            box-shadow: 0 0 0 4px rgba(108, 92, 231, 0.1);
+            background: var(--surface-active);
+            transform: translateY(-1px);
+        }
+
+        .input::placeholder {
+            color: var(--text-disabled);
+            font-weight: 400;
+        }
+
+        .language-selects {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 1rem;
+            margin-bottom: 1rem;
+        }
+
+        .language-selects .input,
+        .input#modelSelect,
+        .input#concurrencySelect {
+            border: 1px solid var(--border-white);
+        }
+
+        /* Button Styling - Premium Feel */
+        .btn {
+            padding: 1rem 2rem;
+            border: none;
+            border-radius: 12px;
+            font-weight: 600;
+            font-size: 0.95rem;
+            cursor: pointer;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.75rem;
+            outline: none;
+            position: relative;
+            overflow: hidden;
+            font-family: inherit;
+            width: 100%;
+            margin-top: 0.5rem;
+            border: 1px solid var(--border-white);
+        }
+
+        .btn::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
+            transition: left 0.6s;
+        }
+
+        .btn:hover::before {
+            left: 100%;
+        }
+
+        .btn-primary {
+            background: var(--gradient-bg);
+            color: white;
+            box-shadow: var(--shadow-md);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-2px) scale(1.02);
+            box-shadow: var(--shadow-lg);
+        }
+
+        .btn-primary:active {
+            transform: translateY(0) scale(1);
+        }
+
+        .btn-secondary {
+            background: var(--surface-secondary);
+            color: var(--text-secondary);
+            border: 1px solid var(--border-default);
+            backdrop-filter: var(--backdrop-blur);
+        }
+
+        .btn-secondary:hover {
+            background: var(--surface-hover);
+            border-color: var(--border-emphasis);
+            transform: translateY(-1px);
+        }
+
+        .btn:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+            transform: none !important;
+        }
+
+        /* File List - Enhanced Scrolling */
+        .file-list {
+            min-height: 300px;
+            max-height: 400px;
+            overflow-y: auto;
+            scrollbar-width: thin;
+            scrollbar-color: var(--border-default) transparent;
+            border: 1px solid var(--border-white);
+            border-radius: 12px;
+            padding: 0.5rem;
+            background: var(--surface-primary);
+        }
+
+        .file-list::-webkit-scrollbar {
+            width: 8px;
+        }
+
+        .file-list::-webkit-scrollbar-track {
+            background: transparent;
+            border-radius: 4px;
+        }
+
+        .file-list::-webkit-scrollbar-thumb {
+            background: var(--border-default);
+            border-radius: 4px;
+            transition: background 0.2s;
+        }
+
+        .file-list::-webkit-scrollbar-thumb:hover {
+            background: var(--border-emphasis);
+        }
+
+        /* Empty State - Elegant Design */
+        .empty-state {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 4rem 2rem;
+            text-align: center;
+            height: 100%;
+            opacity: 0.7;
+            border: 1px solid var(--border-white);
+            border-radius: 12px;
+            background: var(--surface-primary);
+        }
+
+        .empty-state i {
+            font-size: 3.5rem;
+            color: var(--text-disabled);
+            margin-bottom: 1.5rem;
+            opacity: 0.5;
+        }
+
+        .empty-state h3 {
+            font-size: 1.25rem;
+            font-weight: 600;
+            color: var(--text-tertiary);
+            margin-bottom: 0.5rem;
+            letter-spacing: -0.01em;
+        }
+
+        .empty-state p {
+            color: var(--text-disabled);
+            font-size: 0.95rem;
+            font-weight: 400;
+        }
+
+        /* File Item - Sophisticated Layout */
+        .file-item {
+            padding: 1.5rem;
+            border-bottom: 1px solid var(--border-subtle);
+            transition: all 0.3s ease;
+            position: relative;
+        }
+
+        .file-item::before {
+            content: '';
+            position: absolute;
+            left: 0;
+            top: 0;
+            bottom: 0;
+            width: 3px;
+            background: transparent;
+            transition: background 0.3s;
+        }
+
+        .file-item:hover {
+            background: var(--surface-primary);
+        }
+
+        .file-item:hover::before {
+            background: var(--accent-primary);
+        }
+
+        .file-item:last-child {
+            border-bottom: none;
+        }
+
+        .file-info {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1rem;
+        }
+
+        .file-name {
+            font-weight: 600;
+            color: var(--text-primary);
+            font-size: 0.95rem;
+            letter-spacing: -0.01em;
+        }
+
+        /* Status Badges - Modern Design */
+        .file-status {
+            padding: 0.375rem 1rem;
+            border-radius: 20px;
+            font-size: 0.8rem;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            border: 1px solid;
+            min-width: 80px;
+            text-align: center;
+            border: 1px solid var(--border-white);
+        }
+
+        .status-pending {
+            background: var(--warning-bg);
+            color: var(--warning);
+            border-color: rgba(253, 203, 110, 0.2);
+        }
+
+        .status-processing {
+            background: var(--info-bg);
+            color: var(--info);
+            border-color: rgba(116, 185, 255, 0.2);
+            animation: pulse 2s infinite;
+        }
+
+        .status-completed {
+            background: var(--success-bg);
+            color: var(--success);
+            border-color: rgba(0, 184, 148, 0.2);
+        }
+
+        .status-error {
+            background: var(--error-bg);
+            color: var(--error);
+            border-color: rgba(232, 67, 147, 0.2);
+        }
+
+        .status-queued {
+            background: var(--surface-secondary);
+            color: var(--text-secondary);
+            border-color: var(--border-default);
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 1; transform: scale(1); }
+            50% { opacity: 0.8; transform: scale(1.05); }
+        }
+
+        /* Progress Details - Monospace Styling */
+        .progress-details {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-size: 0.85rem;
+            color: var(--text-tertiary);
+            margin: 0.75rem 0;
+            font-family: 'SF Mono', 'Monaco', 'Cascadia Code', 'Roboto Mono', monospace;
+            font-weight: 500;
+        }
+
+        /* Progress Bar - Advanced Animation */
+        .progress-bar {
+            width: 100%;
+            height: 8px;
+            background: var(--surface-secondary);
+            border-radius: 4px;
+            overflow: hidden;
+            margin: 1rem 0;
+            position: relative;
+            border: 1px solid var(--border-subtle);
+            border: 1px solid var(--border-white);
+        }
+
+        .progress-fill {
+            height: 100%;
+            background: var(--gradient-bg);
+            width: 0%;
+            transition: width 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+            border-radius: 4px;
+            position: relative;
+            overflow: hidden;
+        }
+
+        /* File Actions - Enhanced Styling */
+        .file-actions {
+            margin-top: 1rem;
+            font-size: 0.9rem;
+        }
+
+        .file-actions p {
+            margin: 0;
+            padding: 0.75rem 1rem;
+            border-radius: 10px;
+            background: var(--surface-primary);
+            border-left: 3px solid;
+            font-weight: 500;
+        }
+
+        .file-actions p[style*="success"] {
+            border-left-color: var(--success);
+            background: var(--success-bg);
+        }
+
+        .file-actions p[style*="danger"] {
+            border-left-color: var(--error);
+            background: var(--error-bg);
+        }
+
+        /* Control Buttons */
+        .control-buttons {
+            display: flex;
+            gap: 1rem;
+            padding-top: 1.5rem;
+            margin-top: 1.5rem;
+            border-top: 1px solid var(--border-subtle);
+            border: 1px solid var(--border-white);
+            border-radius: 12px;
+            padding: 1rem;
+            background: var(--surface-primary);
+        }
+
+        .control-buttons .btn {
+            flex: 1;
+            font-size: 0.9rem;
+            padding: 0.875rem 1.5rem;
+            width: auto;
+            margin: 0;
+        }
+
+        /* Alert Messages - Refined Design */
+        .error-message, .success-message {
+            margin-top: 1.5rem;
+            padding: 1rem 1.25rem;
+            border-radius: 12px;
+            font-size: 0.9rem;
+            font-weight: 500;
+            animation: slideIn 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+            border: 1px solid;
+            backdrop-filter: var(--backdrop-blur);
+        }
+
+        .error-message {
+            color: var(--error);
+            background: var(--error-bg);
+            border-color: rgba(232, 67, 147, 0.2);
+        }
+
+        .success-message {
+            color: var(--success);
+            background: var(--success-bg);
+            border-color: rgba(0, 184, 148, 0.2);
+        }
+
+        @keyframes slideIn {
+            from {
+                opacity: 0;
+                transform: translateY(-10px) scale(0.95);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0) scale(1);
+            }
+        }
+
+        /* Loading State - Sophisticated Animation */
+        .btn:disabled {
+            position: relative;
+            color: transparent;
+        }
+
+        .btn:disabled::after {
+            content: '';
+            position: absolute;
+            width: 18px;
+            height: 18px;
+            top: 50%;
+            left: 50%;
+            margin-left: -9px;
+            margin-top: -9px;
+            border: 2px solid transparent;
+            border-top-color: currentColor;
+            border-radius: 50%;
+            animation: spin 0.8s linear infinite;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        /* Card Entrance Animation */
+        .card {
+            animation: fadeInUp 0.8s cubic-bezier(0.4, 0, 0.2, 1);
+            animation-fill-mode: both;
+        }
+
+        .card:nth-child(1) { animation-delay: 0.1s; }
+        .card:nth-child(2) { animation-delay: 0.2s; }
+        .card:nth-child(3) { animation-delay: 0.3s; }
+        .card:nth-child(4) { animation-delay: 0.4s; }
+
+        @keyframes fadeInUp {
+            from {
+                opacity: 0;
+                transform: translateY(40px) scale(0.95);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0) scale(1);
+            }
+        }
+
+        /* Responsive Design - Mobile First */
+        @media (max-width: 768px) {
+            .container {
+                padding: 1rem;
+            }
+
+            .main-content {
+                grid-template-columns: 1fr;
+                gap: 1.5rem;
+            }
+
+            header h1 {
+                font-size: 2.5rem;
+            }
+
+            .card-header {
+                padding: 1.5rem;
+            }
+
+            .card-body {
+                padding: 1.5rem;
+            }
+
+            .language-selects {
+                grid-template-columns: 1fr;
+            }
+
+            .control-buttons {
+                flex-direction: column;
+            }
+
+            .progress-details {
+                flex-direction: column;
+                align-items: flex-start;
+                gap: 0.25rem;
+            }
+
+            .btn {
+                padding: 0.875rem 1.5rem;
+            }
+        }
+
+        /* High contrast mode support */
+        @media (prefers-contrast: high) {
+            :root {
+                --border-default: rgba(255, 255, 255, 0.3);
+                --border-emphasis: rgba(255, 255, 255, 0.5);
+                --text-tertiary: rgba(255, 255, 255, 0.8);
+            }
+        }
+
+        /* Reduced motion support */
+        @media (prefers-reduced-motion: reduce) {
+            *, ::before, ::after {
+                animation-duration: 0.01ms !important;
+                animation-iteration-count: 1 !important;
+                transition-duration: 0.01ms !important;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div id="system-info" role="alert" aria-label="System information">
+            Loading system information...
+        </div>
+        
+        <div class="section-header">
+            <h1>Audio/Video Transcriber</h1>
+            <p class="subtitle">Generate subtitles using Sherpa-Onnx Node.js with advanced speech recognition.</p>
+        </div>
+
+        <div class="main-content">
+            <div class="upload-section">
+                <div class="card">
+                    <div class="card-header transcription-header">
+                        <i class="fas fa-file-upload"></i>
+                        <h2>Generate SRT</h2>
+                    </div>
+                    <div class="card-body">
+                        <div class="path-input-section">
+                            <input type="text" id="localPathInput" class="input"
+                                   placeholder="e.g., /absolute/path/to/your/file.wav" 
+                                   pattern="^/.*/" 
+                                   title="Please provide an absolute path starting with /"
+                                   required>
+                            <select id="modelSelect" class="input">
+                                <option value="senseVoice">SenseVoice (Multilingual)</option>
+                                <option value="transducer">Transducer (Japanese)</option>
+                            </select>
+                            <select id="concurrencySelect" class="input">
+                                <option value="1">Sequential Processing (1 file at a time)</option>
+                                <option value="2">Parallel Processing (2 files at a time)</option>
+                            </select>
+                            <button type="button" class="btn btn-primary" id="transcribePathBtn">
+                                <i class="fas fa-play"></i>
+                                Transcribe Path
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="status-section">
+                <div class="card">
+                    <div class="card-header status-header">
+                        <i class="fas fa-tasks"></i>
+                        <h2>Processing Status</h2>
+                    </div>
+                    <div class="card-body">
+                        <div class="file-list" id="fileList">
+                            <div class="empty-state" id="emptyState">
+                                <i class="fas fa-file-alt"></i>
+                                <h3>No files being processed</h3>
+                                <p>Enter folder path to start.</p>
+                            </div>
+                        </div>
+                        <div class="control-buttons">
+                            <button type="button" class="btn btn-secondary" id="stopProcessBtn">
+                                <i class="fas fa-stop"></i>
+                                Stop Process
+                            </button>
+                            <button type="button" class="btn btn-secondary" id="clearListBtn">
+                                <i class="fas fa-trash"></i>
+                                Clear List
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <hr class="section-divider">
+
+    <div class="container">
+        <div class="section-header">
+            <h1>SRT Translator</h1>
+            <p class="subtitle">Translate subtitles using Google Translate with automatic language detection.</p>
+        </div>
+        
+        <div class="main-content">
+            <div class="upload-section">
+                <div class="card">
+                    <div class="card-header translation-header">
+                        <i class="fas fa-language"></i>
+                        <h2>Translate SRT</h2>
+                    </div>
+                    <div class="card-body">
+                        <div class="path-input-section">
+                            <input type="text" id="srtPathInput" class="input" placeholder="e.g., /absolute/path/to/your/file.srt" required>
+                            <div class="language-selects">
+                                <select id="sourceLang" class="input"></select>
+                                <select id="targetLang" class="input"></select>
+                            </div>
+                            <button type="button" class="btn btn-primary" id="translateBtn">
+                                <i class="fas fa-language"></i>
+                                Translate
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="status-section">
+                <div class="card">
+                    <div class="card-header status-header">
+                        <i class="fas fa-list-ol"></i>
+                        <h2>Translation Queue</h2>
+                    </div>
+                    <div class="card-body">
+                        <div class="file-list" id="translationQueue">
+                            <div class="empty-state" id="emptyTranslationQueue">
+                                <i class="fas fa-file-alt"></i>
+                                <h3>No files in queue</h3>
+                                <p>Insert SRT folder path to start translating.</p>
+                            </div>
+                        </div>
+                        <div class="control-buttons">
+                            <button type="button" class="btn btn-secondary" id="stopTranslationBtn">
+                                <i class="fas fa-stop"></i>
+                                Stop Translation
+                            </button>
+                            <button type="button" class="btn btn-secondary" id="clearTranslationBtn">
+                                <i class="fas fa-trash"></i>
+                                Clear Translation
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+    document.addEventListener('DOMContentLoaded', () => {
+      const fileList = document.getElementById('fileList');
+      const emptyState = document.getElementById('emptyState');
+      const localPathInput = document.getElementById('localPathInput');
+      const transcribePathBtn = document.getElementById('transcribePathBtn');
+    
+      // Translation elements
+      const srtPathInput = document.getElementById('srtPathInput');
+      const sourceLangSelect = document.getElementById('sourceLang');
+      const targetLangSelect = document.getElementById('targetLang');
+      const translateBtn = document.getElementById('translateBtn');
+      const translationQueue = document.getElementById('translationQueue');
+      const emptyTranslationQueue = document.getElementById('emptyTranslationQueue');
+    
+      // Control buttons
+      const stopProcessBtn = document.getElementById('stopProcessBtn');
+      const clearListBtn = document.getElementById('clearListBtn');
+      const stopTranslationBtn = document.getElementById('stopTranslationBtn');
+      const clearTranslationBtn = document.getElementById('clearTranslationBtn');
+    
+      let ws = null;
+    
+      function connectWebSocket() {
+        const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
+        const wsUrl = `${protocol}//${window.location.host}`;
+        console.log('Attempting WebSocket connection to:', wsUrl);
+    
+        // Create new socket each time
+        ws = new WebSocket(wsUrl);
+    
+        ws.onopen = () => {
+          console.log('WebSocket connected');
+          // Ask server for current states
+          if (ws.readyState === WebSocket.OPEN) {
+            ws.send(JSON.stringify({ type: 'request_state' }));
+          }
+        };
+    
+        ws.onmessage = (event) => {
+          try {
+            const data = JSON.parse(event.data);
+            handleWebSocketMessage(data);
+          } catch (e) {
+            console.error('WS message parse error', e, event.data);
+          }
+        };
+    
+        ws.onclose = (ev) => {
+          console.warn('WebSocket closed, reconnecting in 3s...', ev.reason || '');
+          setTimeout(connectWebSocket, 3000);
+        };
+    
+        ws.onerror = (err) => {
+          console.error('WebSocket error', err);
+          // ws will also fire onclose; let reconnect handle it
+        };
+      }
+    
+      function handleWebSocketMessage(data) {
+        console.log('WS ->', data);
+        switch (data.type) {
+          case 'state_update':
+            updateFileList(data.state);
+            break;
+          case 'files_detected':
+            updateFileList({ filesList: data.files.map(name => ({ name, status: 'pending' })) });
+            break;
+          case 'file_start':
+            updateFileStatus(data.filename, 'processing');
+            break;
+          case 'file_complete':
+            updateFileStatus(data.filename, 'completed', { srtPath: data.srtPath });
+            break;
+          case 'file_error':
+            updateFileStatus(data.filename, 'error', { error: data.error });
+            break;
+          case 'transcription_progress':
+            updateFileProgress(data.filename, data);
+            break;
+          case 'all_complete':
+            // optional: show summary
+            if (typeof data.totalTime === 'number') {
+              console.info('All complete totalTime:', data.totalTime);
+            }
+            break;
+          case 'translation_state':
+            updateTranslationQueue(data.state.translationQueue);
+            break;
+          case 'translation_start':
+            updateTranslationStatus(data.filename, 'processing');
+            break;
+          case 'translation_complete':
+            updateTranslationStatus(data.filename, 'completed', { outPath: data.outPath });
+            break;
+          case 'translation_error':
+            updateTranslationStatus(data.filename, 'error', { error: data.error });
+            break;
+          case 'debug_output':
+            // optional: append debug logs to an area if you have one
+            console.debug('DEBUG:', data.output);
+            break;
+          case 'info':
+            if (data.message) showSuccess(data.message);
+            break;
+          case 'error':
+            if (data.message) showError(data.message);
+            break;
+          default:
+            console.log('Unhandled WS message type:', data.type);
+        }
+      }
+    
+      // UI update helpers (mostly unchanged)
+      function updateFileList(state) {
+        if (state && Array.isArray(state.filesList) && state.filesList.length > 0) {
+          emptyState.style.display = 'none';
+          fileList.innerHTML = '';
+          state.filesList.forEach(file => fileList.appendChild(createFileItem(file.name, file.status)));
+        } else {
+          fileList.innerHTML = '';
+          fileList.appendChild(emptyState);
+          emptyState.style.display = 'block';
+        }
+      }
+    
+      function createFileItem(filename, status = 'pending') {
+        const fileItem = document.createElement('div');
+        fileItem.className = 'file-item';
+        fileItem.dataset.filename = filename;
+        fileItem.innerHTML = `
+          <div class="file-info">
+            <span class="file-name">${filename}</span>
+            <div class="file-status status-${status}">${status}</div>
+          </div>
+          <div class="progress-details" style="display:flex;justify-content:space-between;font-size:0.9em;color:var(--text-tertiary);margin-top:5px;">
+            <span class="progress-time">Elapsed: <span class="elapsed">0.00</span>s | Remaining: <span class="remaining">0.00</span>s</span>
+            <span class="progress-speed">Speed: <span class="speed-value">0.00</span>x</span>
+          </div>
+          <div class="progress-bar"><div class="progress-fill"></div></div>
+          <div class="file-actions"></div>
+        `;
+        return fileItem;
+      }
+    
+      function updateFileStatus(filename, status, details = {}) {
+        const fileItem = fileList.querySelector(`[data-filename="${filename}"]`);
+        if (!fileItem) return;
+        const statusEl = fileItem.querySelector('.file-status');
+        const progressFill = fileItem.querySelector('.progress-fill');
+        statusEl.className = `file-status status-${status}`;
+        statusEl.textContent = status.charAt(0).toUpperCase() + status.slice(1);
+    
+        const actions = fileItem.querySelector('.file-actions');
+        if (status === 'processing') {
+          progressFill.style.width = '0%';
+          actions.innerHTML = '';
+        } else if (status === 'completed') {
+          progressFill.style.width = '100%';
+          actions.innerHTML = `<p style="color:var(--success)">SRT generated: ${details.srtPath || ''}</p>`;
+        } else if (status === 'error') {
+          progressFill.style.width = '100%';
+          progressFill.style.backgroundColor = 'var(--error)';
+          actions.innerHTML = `<p style="color:var(--error)">Error: ${details.error || 'failed'}</p>`;
+        }
+      }
+    
+      function updateFileProgress(filename, progressData) {
+        const fileItem = fileList.querySelector(`[data-filename="${filename}"]`);
+        if (!fileItem) return;
+        const progressFill = fileItem.querySelector('.progress-fill');
+        const elapsedElem = fileItem.querySelector('.elapsed');
+        const remainingElem = fileItem.querySelector('.remaining');
+        const speedElem = fileItem.querySelector('.speed-value');
+        const percentage = Math.min(100, progressData.progress || 0);
+        progressFill.style.width = `${percentage}%`;
+        if (elapsedElem) elapsedElem.textContent = progressData.elapsed ? progressData.elapsed.toFixed(1) : '0.0';
+        if (remainingElem) remainingElem.textContent = progressData.remaining ? progressData.remaining.toFixed(1) : '0.0';
+        if (speedElem) speedElem.textContent = progressData.speed ? progressData.speed.toFixed(1) : '0.0';
+      }
+    
+      // Translation UI helpers
+      function updateTranslationQueue(queue) {
+        if (Array.isArray(queue) && queue.length > 0) {
+          emptyTranslationQueue.style.display = 'none';
+          translationQueue.innerHTML = '';
+          queue.forEach(job => translationQueue.appendChild(createTranslationJobItem(job.filename, job.status)));
+        } else {
+          translationQueue.innerHTML = '';
+          translationQueue.appendChild(emptyTranslationQueue);
+          emptyTranslationQueue.style.display = 'block';
+        }
+      }
+    
+      function createTranslationJobItem(filename, status = 'queued') {
+        const jobItem = document.createElement('div');
+        jobItem.className = 'file-item';
+        jobItem.dataset.filename = filename;
+        jobItem.innerHTML = `
+          <div class="file-info">
+            <span class="file-name">${filename}</span>
+            <div class="file-status status-${status}">${status}</div>
+          </div>
+          <div class="file-actions"></div>
+        `;
+        return jobItem;
+      }
+    
+      function updateTranslationStatus(filename, status, details = {}) {
+        const jobItem = translationQueue.querySelector(`[data-filename="${filename}"]`);
+        if (!jobItem) return;
+        const statusEl = jobItem.querySelector('.file-status');
+        statusEl.className = `file-status status-${status}`;
+        statusEl.textContent = status.charAt(0).toUpperCase() + status.slice(1);
+        const actions = jobItem.querySelector('.file-actions');
+        if (status === 'completed') actions.innerHTML = `<p style="color:var(--success)">Translated file: ${details.outPath || ''}</p>`;
+        else if (status === 'error') actions.innerHTML = `<p style="color:var(--error)">Error: ${details.error || ''}</p>`;
+      }
+    
+      // Notify helpers
+      function showError(message, container = 'body') {
+        console.error(message);
+        // keep UI simple — reuse existing show behavior
+        const el = document.createElement('div');
+        el.className = 'error-message';
+        el.textContent = message;
+        document.querySelector(container).appendChild(el);
+        setTimeout(() => el.remove(), 5000);
+      }
+      function showSuccess(message, container = 'body') {
+        console.log(message);
+        const el = document.createElement('div');
+        el.className = 'success-message';
+        el.textContent = message;
+        document.querySelector(container).appendChild(el);
+        setTimeout(() => el.remove(), 4000);
+      }
+    
+      // Start / Translate button handlers (unchanged)
+      transcribePathBtn.addEventListener('click', async () => {
+        const p = localPathInput.value.trim();
+        const model = document.getElementById('modelSelect').value;
+        const concurrency = parseInt(document.getElementById('concurrencySelect').value);
+        if (!p) { showError('Please enter a server path.'); return; }
+        transcribePathBtn.disabled = true;
+        transcribePathBtn.textContent = 'Starting...';
+        try {
+          const r = await fetch('/api/start', { method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify({ inputPath: p, model, concurrency }) });
+          if (!r.ok) { const d = await r.json(); throw new Error(d.error || 'Failed to start'); }
+          localPathInput.value = '';
+          showSuccess('Transcription started');
+        } catch (e) {
+          showError(e.message);
+        } finally {
+          transcribePathBtn.disabled = false;
+          transcribePathBtn.textContent = 'Transcribe Path';
+        }
+      });
+    
+      translateBtn.addEventListener('click', async () => {
+        const srtPath = srtPathInput.value.trim();
+        if (!srtPath) { showError('Please enter a path to an SRT file.'); return; }
+        const sourceLang = sourceLangSelect.value;
+        const targetLang = targetLangSelect.value;
+        translateBtn.disabled = true;
+        translateBtn.textContent = 'Queuing...';
+        try {
+          const r = await fetch('/api/translate', { method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify({ srtPath, sourceLang, targetLang }) });
+          if (!r.ok) { const d = await r.json(); throw new Error(d.error || 'Failed to start translation'); }
+          srtPathInput.value = '';
+          showSuccess('Translation queued successfully');
+        } catch (e) {
+          showError(e.message);
+        } finally {
+          translateBtn.disabled = false;
+          translateBtn.textContent = 'Translate';
+        }
+      });
+    
+      // CONTROL BUTTONS (stop / clear)
+      function stopCurrentProcess() {
+        if (ws && ws.readyState === WebSocket.OPEN) {
+          ws.send(JSON.stringify({ type: 'stop_process' }));
+          showSuccess('Stop command sent to server');
+          // DO NOT clear list here — server will update states and UI on broadcast
+        } else {
+          showError('Not connected to server');
+        }
+      }
+    
+      function stopTranslationProcess() {
+        if (ws && ws.readyState === WebSocket.OPEN) {
+          ws.send(JSON.stringify({ type: 'stop_translation' }));
+          showSuccess('Stop translation command sent to server');
+          // DO NOT clear translation queue here — server will broadcast updates
+        } else {
+          showError('Not connected to server');
+        }
+      }
+    
+      function clearFileList() {
+        // Update local UI immediately
+        fileList.innerHTML = '';
+        fileList.appendChild(emptyState);
+        emptyState.style.display = 'block';
+        // Re-enable controls
+        if (transcribePathBtn) { transcribePathBtn.disabled = false; transcribePathBtn.textContent = 'Transcribe Path'; }
+        // Tell server to clear canonical state so other clients sync
+        if (ws && ws.readyState === WebSocket.OPEN) {
+          ws.send(JSON.stringify({ type: 'clear_files' }));
+        }
+        showSuccess('File list cleared');
+      }
+    
+      function clearTranslationList() {
+        translationQueue.innerHTML = '';
+        translationQueue.appendChild(emptyTranslationQueue);
+        emptyTranslationQueue.style.display = 'block';
+        if (translateBtn) { translateBtn.disabled = false; translateBtn.textContent = 'Translate'; }
+        if (ws && ws.readyState === WebSocket.OPEN) {
+          ws.send(JSON.stringify({ type: 'clear_translation' }));
+        }
+        showSuccess('Translation list cleared');
+      }
+    
+      // wire control buttons
+      stopProcessBtn && stopProcessBtn.addEventListener('click', stopCurrentProcess);
+      clearListBtn && clearListBtn.addEventListener('click', clearFileList);
+      stopTranslationBtn && stopTranslationBtn.addEventListener('click', stopTranslationProcess);
+      clearTranslationBtn && clearTranslationBtn.addEventListener('click', clearTranslationList);
+    
+      // languages, system info, initial connect
+      async function populateLanguages() {
+        try {
+          const r = await fetch('/language.json');
+          const languages = await r.json();
+          for (const code in languages) {
+            const opt = new Option(languages[code], code);
+            sourceLangSelect.add(opt.cloneNode(true));
+            targetLangSelect.add(opt);
+          }
+          sourceLangSelect.value = 'auto';
+          targetLangSelect.value = 'en';
+        } catch (err) {
+          console.error('Failed to populate languages', err);
+        }
+      }
+    
+      async function updateSystemInfo() {
+        const systemInfoDiv = document.getElementById('system-info');
+        try {
+          const r = await fetch('/system-info');
+          if (!r.ok) throw new Error('Failed to fetch system info');
+          const data = await r.json();
+          const ramUsed = (data.ram.used / (1024 * 1024)).toFixed(2);
+          const ramTotal = (data.ram.total / (1024 * 1024)).toFixed(2);
+          const swapUsed = (data.swap.used / (1024 * 1024)).toFixed(2);
+          const swapTotal = (data.swap.total / (1024 * 1024)).toFixed(2);
+          systemInfoDiv.innerHTML = `RAM: ${ramUsed} GB / ${ramTotal} GB | Swap: ${swapUsed} GB / ${swapTotal} GB`;
+        } catch (err) {
+          console.error('System info error', err);
+          systemInfoDiv.innerHTML = 'Failed to load system info.';
+        }
+      }
+    
+      // kick things off
+      connectWebSocket();
+      populateLanguages();
+      updateSystemInfo();
+      setInterval(updateSystemInfo, 5000);
+    });
+    </script>
+</body>
+</html>
