@@ -1,9 +1,8 @@
 Generate and translate using Sherpa-Onnx node-addon-api and Google-translate.
 
 1. `transcriber.js` - a 2 to 3x faster Nodejs scripts for generating subtitle compare to python code
-2. `transcriber-parallel.js` - running transcriber process on multiples media files at the same time.
-3. `srt-gtk.js` - Translates SRT subtitles using Free Google Translate
-4. `server.js` - Web interface for managing transcription and translation tasks
+2. `srt-gtk.js` - Translates SRT subtitles using Free Google Translate
+3. `server.js` - Web interface for managing transcription and translation tasks
 
 ## Features
 
