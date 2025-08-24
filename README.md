@@ -1,21 +1,33 @@
-Generate and translate using Sherpa-Onnx node-addon-api and Google-translate.
+# Sherpa-Onnx Subtitle Generator & Translator
 
-1. `transcriber.js` - a 2 to 3x faster Nodejs scripts for generating subtitle compare to python code, & support parallel processing 
-2. `srt-gtk.js` - Translates SRT subtitles using Free Google Translate
+Generate and translate subtitles using Sherpa-Onnx node-addon-api and Google Translate.
+
+## Overview
+
+This project provides a complete solution for generating and translating subtitles from audio/video files. It uses the high-performance Sherpa-Onnx engine for speech recognition and Google Translate for subtitle translation, with both web interface and command-line tools.
+
+## Core Components
+
+1. `gensrt-cli.js` - Command-line interface for generating subtitles with support for multiple models:
+   - SenseVoice: Chinese, English, Japanese, Korean, Cantonese
+   - Zipformer: Japanese
+   - NeMo CTC: 10 European languages (Belarusian, German, English, Spanish, French, Croatian, Italian, Polish, Russian, Ukrainian)
+2. `srt-gtk.js` - Translates SRT subtitles using free Google Translate
 3. `server.js` - Web interface for managing transcription and translation tasks
+4. `fileupload.js` - Handles file uploads with original names and automatic cleanup
+5. `gensrt.js` - Legacy script for generating subtitles (2-3x faster than Python implementations)
 
 ## Features
 
-### Transcriber (`transcriber.js`)
-- Uses Sherpa-ONNX SenseVoice model for accurate speech recognition in multiple languages (Chinese, English, Japanese, Korean, Cantonese) or Zipformer model for Japanese
+### Subtitle Generator (`gensrt.js`)
+- Uses Sherpa-ONNX SenseVoice model for accurate speech recognition in multiple languages (Chinese, English, Japanese, Korean, Cantonese) or Zipformer model for Japanese, or NeMo CTC model for 10 European languages (Belarusian, German, English, Spanish, French, Croatian, Italian, Polish, Russian, Ukrainian)
 - Voice Activity Detection (VAD) to process only speech segments
 - Progress tracking with speed metrics
 - Automatic SRT file generation
-- Memory-optimized processing with reduced buffer size (10 seconds)
-- Efficient temporary file handling using /tmp directory
-- Parallel processing support (up to 2 concurrent processes)
+- Memory-optimized processing with reduced buffer size (30 seconds)
+- Efficient temporary file handling
 - Automatic skipping of files with existing SRT files
-- Graceful shutdown handling with SIGKILL for cleanup
+- Graceful shutdown handling
 
 ### SRT Translator (`srt-gtk.js`)
 - Translates SRT subtitle files using Google's free translation endpoint
@@ -27,10 +39,13 @@ Generate and translate using Sherpa-Onnx node-addon-api and Google-translate.
 
 ### Web Interface (`server.js`)
 - Real-time WebSocket communication for progress updates
+- Modern responsive web interface with dark theme
 - Web-based UI for managing transcription and translation tasks
 - System information display (RAM/Swap usage)
 - Process cancellation support
 - File status tracking
+- Direct path processing and file upload capabilities
+- Parallel processing with configurable concurrency
 
 ### Memory Optimizations
 - Reduced buffer size from 60 to 10 seconds to decrease RAM usage
@@ -44,31 +59,51 @@ Generate and translate using Sherpa-Onnx node-addon-api and Google-translate.
 - Removed progress messages and file counting that included skipped files
 - Integrated tmp package for temporary file management
 
+### File Management
+- Automatic cleanup of temporary uploaded files
+- Intelligent duplicate file handling with unique naming
+- Watcher service for automatic SRT file processing in /sdcard/Download
+- Proper file path validation and security measures
+
+## Detailed Documentation
+
+For comprehensive information about all features, please see:
+- [FEATURES.md](FEATURES.md) - Complete feature list with detailed descriptions
+- [CHANGELOG.md](CHANGELOG.md) - Version history and changes
+
 ## Usage
 
-### Generating Subtitles with Transcriber
+### Generating Subtitles with CLI Script
+
 Export LD_LIBRARY_PATH based on your architecture, for example:
 
 ```bash
 export LD_LIBRARY_PATH=$PWD/node_modules/sherpa-onnx-linux-arm64:$LD_LIBRARY_PATH
 ```
 
-To process all supported files in a directory:
+For a more convenient command-line interface, you can use the `gensrt-cli.js` script directly or through npm:
+
 ```bash
-node transcriber.js /path/to/media/folder
+# Direct usage
+node gensrt-cli.js /path/to/media --model <modelName>
+
+# Or using npm script
+npm run cli /path/to/media -- --model <modelName>
 ```
 
-To process with a specific model:
+Example usage:
 ```bash
-node transcriber.js --model transducer /path/to/media/folder
+node gensrt-cli.js /path/to/media --model senseVoice
+node gensrt-cli.js /path/to/media --model transducer
+node gensrt-cli.js /path/to/media --model nemoCtc
+
+# Or using npm scripts
+npm run cli /path/to/media -- --model senseVoice
+npm run cli /path/to/media -- --model transducer
+npm run cli /path/to/media -- --model nemoCtc
 ```
 
-To process with parallel execution (up to 2 concurrent processes):
-```bash
-node transcriber.js /path/to/media/folder 2
-```
-
-The script will create `.srt` files with the same base name as the input files in the same directory.
+The CLI script provides progress bars and real-time feedback during the transcription process.
 
 ### Translating Subtitles with SRT Translator
 
@@ -88,9 +123,21 @@ node srt-gtk.js ./subtitles en zh
 The script will create new SRT files with `-targetLanguage` suffix (e.g., `movie-zh.srt`) under same folder.
 
 ### Using the Web Interface
+
 Start the server:
 ```bash
 node server.js
 ```
 
 Access the web interface at `http://localhost:3000` to manage transcription and translation tasks.
+
+## System Requirements
+
+- Node.js 14.0 or higher
+- FFmpeg and FFprobe (automatically installed via npm dependencies)
+- Sherpa-Onnx models (automatically downloaded)
+- Minimum 2GB RAM recommended for optimal performance
+
+## License
+
+This project is licensed under the MIT License - see the LICENSE file for details.
