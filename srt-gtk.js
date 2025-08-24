@@ -1,8 +1,8 @@
 #!/usr/bin/env node
-import fs from "fs/promises";
-import path from "path";
-import https from "https";
-import { URLSearchParams } from "url";
+import fs from "node:fs/promises";
+import path from "node:path";
+import https from "node:https";
+import { URLSearchParams } from "node:url";
 
 const CHUNK_SZ = 1000;
 const REQ_GAP = 1200;
@@ -29,8 +29,8 @@ async function parseSrt(file) {
     const content = await fs.readFile(file, "utf8");
     const blocks = content.split(/\r?\n\r?\n/);
     return blocks.map(b => {
-        const [idx, time, ...textLines] = b.split(/\r?\n/);
-        return { idx, time, text: textLines.join("\n") };
+        const [index, time, ...textLines] = b.split(/\r?\n/);
+        return { idx: index, time, text: textLines.join("\n") };
     });
 }
 
@@ -39,8 +39,8 @@ function buildSrt(entries) {
 }
 
 function generateTk(text) {
-    const b = 406644;
-    const b1 = 3293161072;
+    const b = 406_644;
+    const b1 = 3_293_161_072;
     let e = [], f = 0;
     for (let g = 0; g < text.length; g++) {
         let l = text.charCodeAt(g);
@@ -48,9 +48,9 @@ function generateTk(text) {
         else {
             if (l < 2048) e[f++] = l >> 6 | 192;
             else {
-                if ((l & 0xFC00) === 0xD800 && g + 1 < text.length &&
-                    (text.charCodeAt(g + 1) & 0xFC00) === 0xDC00) {
-                    l = 0x10000 + (((l & 0x3FF) << 10) | (text.charCodeAt(++g) & 0x3FF));
+                if ((l & 0xFC_00) === 0xD8_00 && g + 1 < text.length &&
+                    (text.charCodeAt(g + 1) & 0xFC_00) === 0xDC_00) {
+                    l = 0x1_00_00 + (((l & 0x3_FF) << 10) | (text.charCodeAt(++g) & 0x3_FF));
                     e[f++] = l >> 18 | 240;
                     e[f++] = l >> 12 & 63 | 128;
                 } else e[f++] = l >> 12 | 224;
@@ -72,7 +72,7 @@ async function gtxTranslate(text, targetLang, sourceLang = "auto") {
     if (cache[key]) return cache[key];
 
     const tk = generateTk(text);
-    const params = new URLSearchParams({
+    const parameters = new URLSearchParams({
         client: "gtx",
         sl: sourceLang,
         tl: targetLang,
@@ -84,7 +84,7 @@ async function gtxTranslate(text, targetLang, sourceLang = "auto") {
         tk
     });
 
-    const url = `https://translate.googleapis.com/translate_a/single?${params.toString()}`;
+    const url = `https://translate.googleapis.com/translate_a/single?${parameters.toString()}`;
     return new Promise((resolve, reject) => {
         https.get(url, { headers: { "User-Agent": "Mozilla/5.0" } }, res => {
             let body = "";
@@ -103,9 +103,9 @@ async function gtxTranslate(text, targetLang, sourceLang = "auto") {
     });
 }
 
-async function translateFile(filePath, srcLang, tgtLang, index, total) {
-    const ext = path.extname(filePath);
-    const baseName = path.basename(filePath, ext);
+async function translateFile(filePath, sourceLang, tgtLang, index, total) {
+    const extension = path.extname(filePath);
+    const baseName = path.basename(filePath, extension);
 
     // output file follows media base name + lang
     const outFile = path.join(path.dirname(filePath), `${baseName}.${tgtLang}.srt`);
@@ -114,29 +114,29 @@ async function translateFile(filePath, srcLang, tgtLang, index, total) {
         await fs.access(outFile);
         console.log(`(${index}/${total}) ⏭ Skipped: ${path.basename(outFile)} (already exists)`);
         return { skipped: true };
-    } catch (err) {
-        if (err.code !== "ENOENT") throw err;
+    } catch (error) {
+        if (error.code !== "ENOENT") throw error;
     }
 
     console.log(`(${index}/${total}) 📄 Translating: ${path.basename(filePath)}`);
     const entries = await parseSrt(filePath);
-    let i = 0;
-    while (i < entries.length) {
+    let index_ = 0;
+    while (index_ < entries.length) {
         let chunk = "";
         const indices = [];
-        while (i < entries.length && (chunk + entries[i].text).length <= CHUNK_SZ) {
-            chunk += entries[i].text + "\n";
-            indices.push(i++);
+        while (index_ < entries.length && (chunk + entries[index_].text).length <= CHUNK_SZ) {
+            chunk += entries[index_].text + "\n";
+            indices.push(index_++);
         }
-        if (indices.length === 0) indices.push(i++);
+        if (indices.length === 0) indices.push(index_++);
 
         try {
-            const res = await gtxTranslate(chunk.trim(), tgtLang, srcLang);
-            res.split("\n").forEach((t, k) => {
+            const res = await gtxTranslate(chunk.trim(), tgtLang, sourceLang);
+            for (const [k, t] of res.split("\n").entries()) {
                 if (indices[k] !== undefined) entries[indices[k]].text = t;
-            });
-        } catch (e) {
-            console.error(`⚠️  ${e}`);
+            }
+        } catch (error) {
+            console.error(`⚠️  ${error}`);
         }
 
         await sleep(REQ_GAP);
@@ -146,31 +146,31 @@ async function translateFile(filePath, srcLang, tgtLang, index, total) {
         await fs.writeFile(outFile, buildSrt(entries), "utf8");
         await saveCache(cache);
         console.log(`✅ Saved: ${path.basename(outFile)}`);
-    } catch (err) {
-        console.error(`❌ Failed to write ${outFile}:`, err.message);
+    } catch (error) {
+        console.error(`❌ Failed to write ${outFile}:`, error.message);
     }
 
     return { skipped: false, outPath: outFile };
 }
 async function main() {
-    const [, , pathArg, srcLang, tgtLang] = process.argv;
+    const [, , pathArgument, sourceLang, tgtLang] = process.argv;
 
-    console.log(`Starting translation with path: ${pathArg}, source: ${srcLang}, target: ${tgtLang}`);
+    console.log(`Starting translation with path: ${pathArgument}, source: ${sourceLang}, target: ${tgtLang}`);
 
-    if (!pathArg || !srcLang || !tgtLang) {
+    if (!pathArgument || !sourceLang || !tgtLang) {
         console.error("❌ Usage: node gtx-srt.js /path/to/file/or/folder sourceLang targetLang");
         process.exit(1);
     }
 
     let files = [];
     try {
-        const stats = await fs.stat(pathArg);
+        const stats = await fs.stat(pathArgument);
         if (stats.isDirectory()) {
-            files = (await fs.readdir(pathArg))
+            files = (await fs.readdir(pathArgument))
                 .filter(f => f.toLowerCase().endsWith(".srt"))
-                .map(f => path.join(pathArg, f));
-        } else if (stats.isFile() && pathArg.toLowerCase().endsWith(".srt")) {
-            files = [pathArg];
+                .map(f => path.join(pathArgument, f));
+        } else if (stats.isFile() && pathArgument.toLowerCase().endsWith(".srt")) {
+            files = [pathArgument];
         } else {
             console.error("❌ Invalid path. Must be a .srt file or directory containing .srt files.");
             process.exit(1);
@@ -180,7 +180,7 @@ async function main() {
         process.exit(1);
     }
 
-    if (!files.length) {
+    if (files.length === 0) {
         console.error("❌ No .srt files found.");
         process.exit(1);
     }
@@ -207,7 +207,7 @@ async function main() {
         }
         
         index++;
-        await translateFile(file, srcLang, tgtLang, index, total);
+        await translateFile(file, sourceLang, tgtLang, index, total);
         
         // If cancelled during processing, exit
         if (cancelled) {

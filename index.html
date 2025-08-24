@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Subtitle Generator & Translator</title>
+    <title>Subtitle Generator &amp; Translator</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap');
@@ -65,8 +65,7 @@
             --glass-border: rgba(255, 255, 255, 0.1);
             --backdrop-blur: blur(20px);
             
-            /* Section Dividers */
-            --divider-color: rgba(255, 255, 255, 0.08);
+            <!-- Section Dividers -->
             --section-border: 1px solid var(--divider-color);
         }
 
@@ -129,13 +128,15 @@
         }
 
         .container {
-            max-width: 1400px;
+            max-width: 1200px;
+            width: 95%;
             margin: 0 auto;
-            padding: 2rem;
+            padding: 1.5rem;
             position: relative;
             border: 1px solid var(--border-white);
             border-radius: 20px;
             margin-bottom: 2rem;
+            box-sizing: border-box;
         }
 
         /* Divider for sections */
@@ -208,7 +209,7 @@
         .main-content {
             display: grid;
             grid-template-columns: 1fr 1fr;
-            gap: 2rem;
+            gap: 1.5rem;
             margin-bottom: 3rem;
         }
 
@@ -333,14 +334,69 @@
         }
 
         .card-body {
-            padding: 2rem;
+            padding: 1.5rem;
         }
 
-        /* Input Styling - Modern & Clean */
-        .path-input-section {
+        /* Input Sections - Organized Layout */
+        .input-section {
+            margin-bottom: 1.5rem;
+        }
+        
+        .input-section h3 {
+            font-size: 1.125rem;
+            font-weight: 600;
+            color: var(--text-primary);
+            margin-bottom: 0.5rem;
             display: flex;
-            flex-direction: column;
-            gap: 1.5rem;
+            align-items: center;
+            gap: 0.75rem;
+        }
+        
+        .input-section .subtitle {
+            color: var(--text-tertiary);
+            font-size: 0.9rem;
+            margin-bottom: 1rem;
+        }
+        
+        .input-row {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 1rem;
+            margin-bottom: 1rem;
+        }
+        
+        .button-row {
+            display: flex;
+            gap: 1rem;
+            margin-top: 1rem;
+            flex-wrap: wrap;
+        }
+        
+        .button-row .btn {
+            flex: 1;
+            min-width: 120px;
+        }
+        
+        /* Divider */
+        .divider {
+            height: 1px;
+            background: var(--divider-color);
+            margin: 1.5rem 0;
+        }
+        
+        /* Ensure proper overflow handling */
+        .card-body {
+            overflow-x: hidden;
+        }
+        
+        .input {
+            max-width: 100%;
+            box-sizing: border-box;
+        }
+        
+        .file-name {
+            word-break: break-word;
+            overflow-wrap: break-word;
         }
 
         .input {
@@ -372,16 +428,10 @@
             font-weight: 400;
         }
 
-        .language-selects {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 1rem;
-            margin-bottom: 1rem;
-        }
-
         .language-selects .input,
         .input#modelSelect,
-        .input#concurrencySelect {
+        .input#concurrencySelect,
+        .input#srtPathInput {
             border: 1px solid var(--border-white);
         }
 
@@ -532,7 +582,7 @@
             transition: all 0.3s ease;
             position: relative;
         }
-
+        
         .file-item::before {
             content: '';
             position: absolute;
@@ -543,31 +593,34 @@
             background: transparent;
             transition: background 0.3s;
         }
-
+        
         .file-item:hover {
             background: var(--surface-primary);
         }
-
+        
         .file-item:hover::before {
             background: var(--accent-primary);
         }
-
+        
         .file-item:last-child {
             border-bottom: none;
         }
-
+        
         .file-info {
             display: flex;
             justify-content: space-between;
             align-items: center;
             margin-bottom: 1rem;
         }
-
+        
         .file-name {
             font-weight: 600;
             color: var(--text-primary);
             font-size: 0.95rem;
             letter-spacing: -0.01em;
+            word-break: break-word;
+            overflow-wrap: break-word;
+            max-width: 70%;
         }
 
         /* Status Badges - Modern Design */
@@ -609,6 +662,12 @@
             border-color: rgba(232, 67, 147, 0.2);
         }
 
+        .status-uploaded {
+            background: var(--info-bg);
+            color: var(--info);
+            border-color: rgba(116, 185, 255, 0.2);
+        }
+
         .status-queued {
             background: var(--surface-secondary);
             color: var(--text-secondary);
@@ -630,6 +689,8 @@
             margin: 0.75rem 0;
             font-family: 'SF Mono', 'Monaco', 'Cascadia Code', 'Roboto Mono', monospace;
             font-weight: 500;
+            word-break: break-word;
+            overflow-wrap: break-word;
         }
 
         /* Progress Bar - Advanced Animation */
@@ -784,9 +845,11 @@
         }
 
         /* Responsive Design - Mobile First */
+        /* Responsive Design - Mobile First */
         @media (max-width: 768px) {
             .container {
                 padding: 1rem;
+                margin: 0.5rem;
             }
 
             .main-content {
@@ -806,7 +869,7 @@
                 padding: 1.5rem;
             }
 
-            .language-selects {
+            .input-row {
                 grid-template-columns: 1fr;
             }
 
@@ -822,6 +885,44 @@
 
             .btn {
                 padding: 0.875rem 1.5rem;
+            }
+            
+            .button-row {
+                flex-direction: column;
+            }
+            
+            .button-row .btn {
+                width: 100%;
+            }
+            
+            .file-name {
+                max-width: 60%;
+            }
+        }
+        
+        /* Very small screens */
+        @media (max-width: 480px) {
+            .container {
+                padding: 0.75rem;
+                margin: 0.25rem;
+            }
+            
+            .card-body {
+                padding: 1rem;
+            }
+            
+            .file-info {
+                flex-direction: column;
+                align-items: flex-start;
+                gap: 0.5rem;
+            }
+            
+            .file-name {
+                max-width: 100%;
+            }
+            
+            .file-status {
+                align-self: flex-end;
             }
         }
 
@@ -849,7 +950,7 @@
         <div id="system-info" role="alert" aria-label="System information">
             Loading system information...
         </div>
-        
+
         <div class="section-header">
             <h1>Audio/Video Transcriber</h1>
             <p class="subtitle">Generate subtitles using Sherpa-Onnx Node.js with advanced speech recognition.</p>
@@ -863,24 +964,40 @@
                         <h2>Generate SRT</h2>
                     </div>
                     <div class="card-body">
-                        <div class="path-input-section">
-                            <input type="text" id="localPathInput" class="input"
-                                   placeholder="e.g., /absolute/path/to/your/file.wav" 
-                                   pattern="^/.*/" 
-                                   title="Please provide an absolute path starting with /"
-                                   required>
-                            <select id="modelSelect" class="input">
-                                <option value="senseVoice">SenseVoice (Multilingual)</option>
-                                <option value="transducer">Transducer (Japanese)</option>
-                            </select>
-                            <select id="concurrencySelect" class="input">
-                                <option value="1">Sequential Processing (1 file at a time)</option>
-                                <option value="2">Parallel Processing (2 files at a time)</option>
-                            </select>
+                        <div class="input-section">
+                            <h3><i class="fas fa-desktop"></i> Direct Path Processing</h3>
+                            <p class="subtitle">Enter file or folder path directly on the server</p>
+                            <input type="text" id="localPathInput" class="input" placeholder="Enter file or folder path...">
+                            <div class="input-row">
+                                <select id="modelSelect" class="input">
+                                    <option value="senseVoice">SenseVoice (Multilingual)</option>
+                                    <option value="transducer">Transducer (Japanese)</option>
+                                </select>
+                                <select id="concurrencySelect" class="input">
+                                    <option value="1">Sequential Processing (1 file at a time)</option>
+                                </select>
+                            </div>
                             <button type="button" class="btn btn-primary" id="transcribePathBtn">
-                                <i class="fas fa-play"></i>
-                                Transcribe Path
+                                <i class="fas fa-play"></i> Process Path
                             </button>
+                        </div>
+
+                        <div class="divider"></div>
+
+                        <div class="input-section">
+                            <h3><i class="fas fa-cloud-upload-alt"></i> File Upload Processing</h3>
+                            <p class="subtitle">Upload files from your device for transcription</p>
+                            <div class="file-picker-section">
+                                <input type="file" id="filePicker" multiple style="display:none">
+                                <div class="button-row">
+                                    <button type="button" id="openFilePickerBtn" class="btn btn-secondary">
+                                        <i class="fas fa-folder-open"></i> Browse Files
+                                    </button>
+                                    <button type="button" id="uploadFilesBtn" class="btn btn-primary">
+                                        <i class="fas fa-upload"></i> Upload &amp; Process
+                                    </button>
+                                </div>
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -922,7 +1039,7 @@
             <h1>SRT Translator</h1>
             <p class="subtitle">Translate subtitles using Google Translate with automatic language detection.</p>
         </div>
-        
+
         <div class="main-content">
             <div class="upload-section">
                 <div class="card">
@@ -931,16 +1048,35 @@
                         <h2>Translate SRT</h2>
                     </div>
                     <div class="card-body">
-                        <div class="path-input-section">
+                        <div class="input-section">
+                            <h3><i class="fas fa-desktop"></i> Direct Path Translation</h3>
+                            <p class="subtitle">Enter SRT file or folder path directly on the server</p>
                             <input type="text" id="srtPathInput" class="input" placeholder="e.g., /absolute/path/to/your/file.srt" required>
-                            <div class="language-selects">
+                            <div class="input-row">
                                 <select id="sourceLang" class="input"></select>
                                 <select id="targetLang" class="input"></select>
                             </div>
                             <button type="button" class="btn btn-primary" id="translateBtn">
-                                <i class="fas fa-language"></i>
-                                Translate
+                                <i class="fas fa-language"></i> Translate Path
                             </button>
+                        </div>
+
+                        <div class="divider"></div>
+
+                        <div class="input-section">
+                            <h3><i class="fas fa-cloud-upload-alt"></i> SRT File Upload Translation</h3>
+                            <p class="subtitle">Upload SRT files from your device for translation</p>
+                            <div class="file-picker-section">
+                                <input type="file" id="srtFilePicker" multiple accept=".srt" style="display:none">
+                                <div class="button-row">
+                                    <button type="button" id="openSrtFilePickerBtn" class="btn btn-secondary">
+                                        <i class="fas fa-folder-open"></i> Browse SRT Files
+                                    </button>
+                                    <button type="button" id="uploadSrtFilesBtn" class="btn btn-primary">
+                                        <i class="fas fa-upload"></i> Upload &amp; Translate
+                                    </button>
+                                </div>
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -1092,12 +1228,56 @@
       function updateFileList(state) {
         if (state && Array.isArray(state.filesList) && state.filesList.length > 0) {
           emptyState.style.display = 'none';
-          fileList.innerHTML = '';
-          state.filesList.forEach(file => fileList.appendChild(createFileItem(file.name, file.status)));
+          
+          // Create a set of current filenames for efficient lookup
+          const currentFiles = new Set();
+          state.filesList.forEach(file => currentFiles.add(file.name));
+          
+          // Remove files that are no longer in the list (but keep staged files)
+          const existingItems = fileList.querySelectorAll('.file-item');
+          existingItems.forEach(item => {
+            const filename = item.dataset.filename;
+            // Check if this is a staged file
+            const stagedMarker = item.querySelector('.file-actions p');
+            const isStaged = stagedMarker && stagedMarker.textContent.includes('Staged for upload');
+            
+            // Only remove non-staged files that are not in the current list
+            if (!currentFiles.has(filename) && !isStaged) {
+              item.remove();
+            }
+          });
+          
+          // Add or update files in the list
+          state.filesList.forEach(file => {
+            let fileItem = fileList.querySelector(`[data-filename="${file.name}"]`);
+            if (!fileItem) {
+              // Create new item if it doesn't exist
+              fileItem = createFileItem(file.name, file.status);
+              fileList.appendChild(fileItem);
+            } else {
+              // Update status if item exists (but don't update staged files)
+              const stagedMarker = fileItem.querySelector('.file-actions p');
+              const isStaged = stagedMarker && stagedMarker.textContent.includes('Staged for upload');
+              if (!isStaged) {
+                updateFileStatus(file.name, file.status);
+              }
+            }
+          });
         } else {
-          fileList.innerHTML = '';
-          fileList.appendChild(emptyState);
-          emptyState.style.display = 'block';
+          // Only clear if there are no staged files
+          const stagedFileItems = fileList.querySelectorAll('.file-item .file-actions p');
+          let hasStagedFiles = false;
+          stagedFileItems.forEach(item => {
+            if (item.textContent.includes('Staged for upload')) {
+              hasStagedFiles = true;
+            }
+          });
+          
+          if (!hasStagedFiles) {
+            fileList.innerHTML = '';
+            fileList.appendChild(emptyState);
+            emptyState.style.display = 'block';
+          }
         }
       }
     
@@ -1132,6 +1312,9 @@
         if (status === 'processing') {
           progressFill.style.width = '0%';
           actions.innerHTML = '';
+        } else if (status === 'uploaded') {
+          progressFill.style.width = '100%';
+          actions.innerHTML = `<p style="color:var(--info)">File uploaded successfully. Transcription started automatically.</p>`;
         } else if (status === 'completed') {
           progressFill.style.width = '100%';
           actions.innerHTML = `<p style="color:var(--success)">SRT generated: ${details.srtPath || ''}</p>`;
@@ -1187,11 +1370,24 @@
         const jobItem = translationQueue.querySelector(`[data-filename="${filename}"]`);
         if (!jobItem) return;
         const statusEl = jobItem.querySelector('.file-status');
+        const progressFill = jobItem.querySelector('.progress-fill');
         statusEl.className = `file-status status-${status}`;
         statusEl.textContent = status.charAt(0).toUpperCase() + status.slice(1);
         const actions = jobItem.querySelector('.file-actions');
-        if (status === 'completed') actions.innerHTML = `<p style="color:var(--success)">Translated file: ${details.outPath || ''}</p>`;
-        else if (status === 'error') actions.innerHTML = `<p style="color:var(--error)">Error: ${details.error || ''}</p>`;
+        if (status === 'processing') {
+          progressFill.style.width = '0%';
+          actions.innerHTML = '';
+        } else if (status === 'uploaded') {
+          progressFill.style.width = '100%';
+          actions.innerHTML = `<p style="color:var(--info)">File uploaded successfully. Translation started automatically.</p>`;
+        } else if (status === 'completed') {
+          progressFill.style.width = '100%';
+          actions.innerHTML = `<p style="color:var(--success)">Translation completed: ${details.outPath || ''}</p>`;
+        } else if (status === 'error') {
+          progressFill.style.width = '100%';
+          progressFill.style.backgroundColor = 'var(--error)';
+          actions.innerHTML = `<p style="color:var(--error)">Error: ${details.error || ''}</p>`;
+        }
       }
     
       // Notify helpers
@@ -1213,12 +1409,268 @@
         setTimeout(() => el.remove(), 4000);
       }
     
-      // Start / Translate button handlers (unchanged)
+        // File Picker Functionality
+      const filePicker = document.getElementById('filePicker');
+      const openFilePickerBtn = document.getElementById('openFilePickerBtn');
+      const uploadFilesBtn = document.getElementById('uploadFilesBtn');
+      
+      // SRT File Picker Functionality
+      const srtFilePicker = document.getElementById('srtFilePicker');
+      const openSrtFilePickerBtn = document.getElementById('openSrtFilePickerBtn');
+      const uploadSrtFilesBtn = document.getElementById('uploadSrtFilesBtn');
+      
+      // Keep selected FileList in memory
+      let stagedFiles = [];
+      let stagedSrtFiles = [];
+
+      // Click -> open native file dialog
+      openFilePickerBtn && openFilePickerBtn.addEventListener('click', () => filePicker.click());
+      openSrtFilePickerBtn && openSrtFilePickerBtn.addEventListener('click', () => srtFilePicker.click());
+
+      // When user selects files in dialog, cache them and update UI preview
+      filePicker && filePicker.addEventListener('change', (ev) => {
+        const files = Array.from(ev.target.files || []);
+        if (!files.length) return;
+        // merge new files avoid duplicates by name
+        const existingNames = new Set(stagedFiles.map(f => f.name));
+        for (const f of files) {
+          if (!existingNames.has(f.name)) stagedFiles.push(f);
+        }
+        renderStagedFiles();
+      });
+      
+      // When user selects SRT files in dialog, cache them and update UI preview
+      srtFilePicker && srtFilePicker.addEventListener('change', (ev) => {
+        const files = Array.from(ev.target.files || []);
+        if (!files.length) return;
+        // merge new files avoid duplicates by name
+        const existingNames = new Set(stagedSrtFiles.map(f => f.name));
+        for (const f of files) {
+          if (!existingNames.has(f.name)) stagedSrtFiles.push(f);
+        }
+        renderStagedSrtFiles();
+      });
+
+      // Click Upload button -> start uploading and processing staged files one by one
+      uploadFilesBtn && uploadFilesBtn.addEventListener('click', async () => {
+        if (!stagedFiles.length) { showError('No files selected to upload.'); return; }
+        uploadFilesBtn.disabled = true;
+        uploadFilesBtn.textContent = 'Processing...';
+        
+        try {
+          // Process files one by one
+          for (const file of stagedFiles) {
+            updateFileStatus(file.name, 'processing');
+            await uploadAndProcessSingleFile(file);
+          }
+          showSuccess('All files processed successfully.');
+          // clear staged files array
+          stagedFiles = [];
+          filePicker.value = ''; // reset file input
+          renderStagedFiles(); // Update UI to remove staged files
+        } catch (err) {
+          showError('Processing failed: ' + (err.message || err));
+        } finally {
+          uploadFilesBtn.disabled = false;
+          uploadFilesBtn.textContent = 'Upload & Process';
+        }
+      });
+      
+      // Click Upload SRT button -> start uploading staged SRT files
+      uploadSrtFilesBtn && uploadSrtFilesBtn.addEventListener('click', async () => {
+        if (!stagedSrtFiles.length) { showError('No SRT files selected to upload.'); return; }
+        uploadSrtFilesBtn.disabled = true;
+        uploadSrtFilesBtn.textContent = 'Uploading...';
+        
+        try {
+          await uploadStagedSrtFiles();
+          showSuccess('All SRT files uploaded successfully. Translation started automatically.');
+          // clear staged files array
+          stagedSrtFiles = [];
+          srtFilePicker.value = ''; // reset file input
+          renderStagedSrtFiles(); // Update UI to remove staged files
+        } catch (err) {
+          showError('Upload failed: ' + (err.message || err));
+        } finally {
+          uploadSrtFilesBtn.disabled = false;
+          uploadSrtFilesBtn.textContent = 'Upload & Translate';
+        }
+      });
+
+      // Show staged files in your file-list preview (reuses createFileItem)
+      function renderStagedFiles() {
+        // If no staged files, don't modify the UI
+        if (stagedFiles.length === 0) return;
+        
+        // If fileList is empty or showing emptyState, remove it
+        if (fileList.contains(emptyState)) emptyState.style.display = 'none';
+        
+        // preserve any existing items (server state) — append staged files if not already present
+        for (const f of stagedFiles) {
+          const already = fileList.querySelector(`[data-filename="${escapeSelector(f.name)}"]`);
+          if (!already) {
+            // createFileItem returns an element with dataset.filename
+            const el = createFileItem(f.name, 'pending');
+            // attach a small "staged" marker in actions area
+            const actions = el.querySelector('.file-actions');
+            if (actions) actions.innerHTML = `<p style="color:var(--text-tertiary)">Staged for upload</p>`;
+            fileList.appendChild(el);
+          }
+        }
+      }
+      
+      // Show staged SRT files in translation queue preview
+      function renderStagedSrtFiles() {
+        // If no staged files, don't modify the UI
+        if (stagedSrtFiles.length === 0) return;
+        
+        // If translationQueue is empty or showing emptyTranslationQueue, remove it
+        if (translationQueue.contains(emptyTranslationQueue)) emptyTranslationQueue.style.display = 'none';
+        
+        // preserve any existing items (server state) — append staged files if not already present
+        for (const f of stagedSrtFiles) {
+          const already = translationQueue.querySelector(`[data-filename="${escapeSelector(f.name)}"]`);
+          if (!already) {
+            // createTranslationJobItem returns an element with dataset.filename
+            const el = createTranslationJobItem(f.name, 'pending');
+            // attach a small "staged" marker in actions area
+            const actions = el.querySelector('.file-actions');
+            if (actions) actions.innerHTML = `<p style="color:var(--text-tertiary)">Staged for upload</p>`;
+            translationQueue.appendChild(el);
+          }
+        }
+      }
+
+      // Helper: upload and process a single file
+      async function uploadAndProcessSingleFile(file) {
+        // update UI status -> uploading
+        updateFileStatus(file.name, 'processing');
+        // Upload the file
+        const uploadResponse = await uploadFileToServer(file, '/api/upload');
+        
+        // Wait for processing to complete by listening to WebSocket messages
+        return new Promise((resolve, reject) => {
+          const timeout = setTimeout(() => {
+            reject(new Error('Processing timeout'));
+          }, 300000); // 5 minute timeout
+          
+          // Listen for WebSocket messages to determine when processing is complete
+          const handleMessage = (event) => {
+            try {
+              const data = JSON.parse(event.data);
+              if (data.type === 'file_complete' && data.filename === file.name) {
+                clearTimeout(timeout);
+                ws.removeEventListener('message', handleMessage);
+                resolve();
+              } else if (data.type === 'file_error' && data.filename === file.name) {
+                clearTimeout(timeout);
+                ws.removeEventListener('message', handleMessage);
+                reject(new Error(data.error || 'Processing failed'));
+              }
+            } catch (e) {
+              // Ignore parsing errors
+            }
+          };
+          
+          ws.addEventListener('message', handleMessage);
+        });
+      }
+      
+      // Helper: upload all staged SRT files sequentially
+      async function uploadStagedSrtFiles() {
+        for (const file of stagedSrtFiles) {
+          // update UI status -> uploading
+          updateTranslationStatus(file.name, 'processing');
+          await uploadFileToServer(file, '/api/upload-srt');
+        }
+      }
+
+      // Upload a file to the server with XHR to display progress events
+      function uploadFileToServer(file, endpoint) {
+        return new Promise((resolve, reject) => {
+          const xhr = new XMLHttpRequest();
+          const formData = new FormData();
+          formData.append('file', file);
+          
+          xhr.upload.onprogress = (e) => {
+            if (e.lengthComputable) {
+              const percent = Math.round((e.loaded / e.total) * 100);
+              // Update progress for transcription files
+              if (endpoint === '/api/upload') {
+                updateFileProgress(file.name, { progress: percent });
+              } 
+              // Update progress for translation files
+              else if (endpoint === '/api/upload-srt') {
+                const jobItem = translationQueue.querySelector(`[data-filename="${escapeSelector(file.name)}"]`);
+                if (jobItem) {
+                  const progressFill = jobItem.querySelector('.progress-fill');
+                  if (progressFill) progressFill.style.width = percent + '%';
+                }
+              }
+            }
+          };
+          
+          xhr.onload = () => {
+            if (xhr.status >= 200 && xhr.status < 300) {
+              const response = JSON.parse(xhr.response);
+              // Update status for transcription files
+              if (endpoint === '/api/upload') {
+                updateFileStatus(file.name, 'uploaded');
+                const fileItem = fileList.querySelector(`[data-filename="${escapeSelector(file.name)}"]`);
+                if (fileItem) {
+                  fileItem.dataset.filePath = response.filePath;
+                }
+              } 
+              // Update status for translation files
+              else if (endpoint === '/api/upload-srt') {
+                updateTranslationStatus(file.name, 'uploaded');
+                const jobItem = translationQueue.querySelector(`[data-filename="${escapeSelector(file.name)}"]`);
+                if (jobItem) {
+                  jobItem.dataset.filePath = response.filePath;
+                }
+              }
+              resolve(response);
+            } else {
+              if (endpoint === '/api/upload') {
+                updateFileStatus(file.name, 'error', { message: 'Upload failed' });
+              } else if (endpoint === '/api/upload-srt') {
+                updateTranslationStatus(file.name, 'error', { message: 'Upload failed' });
+              }
+              reject(new Error('Upload failed'));
+            }
+          };
+          
+          xhr.onerror = () => {
+            if (endpoint === '/api/upload') {
+              updateFileStatus(file.name, 'error', { message: 'Network error' });
+            } else if (endpoint === '/api/upload-srt') {
+              updateTranslationStatus(file.name, 'error', { message: 'Network error' });
+            }
+            reject(new Error('Network error'));
+          };
+          
+          xhr.open('POST', endpoint, true);
+          xhr.send(formData);
+        });
+      }
+
+      // Helper to escape CSS selectors
+      function escapeSelector(selector) {
+        return selector.replace(/[!"#$%&'()*+,\-./:;<=>?@\[\]^`{|}~]/g, '\\$&');
+      }
+
+      // Start / Translate button handlers
       transcribePathBtn.addEventListener('click', async () => {
-        const p = localPathInput.value.trim();
+        let p = localPathInput.value.trim();
         const model = document.getElementById('modelSelect').value;
         const concurrency = parseInt(document.getElementById('concurrencySelect').value);
-        if (!p) { showError('Please enter a server path.'); return; }
+        
+        // Only process direct paths, not uploaded files (since they're auto-transcribed)
+        if (!p) { 
+          showError('Please enter a server path for direct transcription.'); 
+          return; 
+        }
+        
         transcribePathBtn.disabled = true;
         transcribePathBtn.textContent = 'Starting...';
         try {
@@ -1230,10 +1682,9 @@
           showError(e.message);
         } finally {
           transcribePathBtn.disabled = false;
-          transcribePathBtn.textContent = 'Transcribe Path';
+          transcribePathBtn.textContent = 'Start';
         }
-      });
-    
+      });    
       translateBtn.addEventListener('click', async () => {
         const srtPath = srtPathInput.value.trim();
         if (!srtPath) { showError('Please enter a path to an SRT file.'); return; }
