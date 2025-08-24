@@ -15,7 +15,6 @@ This project provides a complete solution for generating and translating subtitl
 2. `srt-gtk.js` - Translates SRT subtitles using free Google Translate
 3. `server.js` - Web interface for managing transcription and translation tasks
 4. `fileupload.js` - Handles file uploads with original names and automatic cleanup
-5. `gensrt.js` - Legacy script for generating subtitles (2-3x faster than Python implementations)
 
 ## Features
 
@@ -47,29 +46,7 @@ This project provides a complete solution for generating and translating subtitl
 - Direct path processing and file upload capabilities
 - Parallel processing with configurable concurrency
 
-### Memory Optimizations
-- Reduced buffer size from 60 to 10 seconds to decrease RAM usage
-- Limited maximum concurrency from 4 to 2 to reduce simultaneous processes
-- Implemented disk-based buffering for SRT segment storage
-- Used /tmp directory for temporary file storage
-- Added explicit cleanup for segments arrays and ffmpeg processes to help with garbage collection
-- Implemented forceful process termination using SIGKILL for better cleanup
-- Fixed cross-device rename error by changing from rename to copy operation for temporary files
-- Made skipping files with existing SRT files completely silent by default
-- Removed progress messages and file counting that included skipped files
-- Integrated tmp package for temporary file management
-
-### File Management
-- Automatic cleanup of temporary uploaded files
-- Intelligent duplicate file handling with unique naming
-- Watcher service for automatic SRT file processing in /sdcard/Download
-- Proper file path validation and security measures
-
-## Detailed Documentation
-
-For comprehensive information about all features, please see:
-- [FEATURES.md](FEATURES.md) - Complete feature list with detailed descriptions
-- [CHANGELOG.md](CHANGELOG.md) - Version history and changes
+##
 
 ## Usage
 
@@ -136,8 +113,3 @@ Access the web interface at `http://localhost:3000` to manage transcription and 
 - Node.js 14.0 or higher
 - FFmpeg and FFprobe (automatically installed via npm dependencies)
 - Sherpa-Onnx models (automatically downloaded)
-- Minimum 2GB RAM recommended for optimal performance
-
-## License
-
-This project is licensed under the MIT License - see the LICENSE file for details.
