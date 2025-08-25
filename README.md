@@ -18,7 +18,7 @@ This project provides a complete solution for generating and translating subtitl
 
 ## Features
 
-### Subtitle Generator (`gensrt.js`)
+### Subtitle Generator
 - Uses Sherpa-ONNX SenseVoice model for accurate speech recognition in multiple languages (Chinese, English, Japanese, Korean, Cantonese) or Zipformer model for Japanese, or NeMo CTC model for 10 European languages (Belarusian, German, English, Spanish, French, Croatian, Italian, Polish, Russian, Ukrainian)
 - Voice Activity Detection (VAD) to process only speech segments
 - Progress tracking with speed metrics
@@ -65,20 +65,14 @@ For a more convenient command-line interface, you can use the `gensrt-cli.js` sc
 node gensrt-cli.js /path/to/media --model <modelName>
 
 # Or using npm script
-npm run cli /path/to/media -- --model <modelName>
+npm run cli /path/to/media/folder -- --model <modelName>
 ```
 
 Example usage:
 ```bash
-node gensrt-cli.js /path/to/media --model senseVoice
-node gensrt-cli.js /path/to/media --model transducer
-node gensrt-cli.js /path/to/media --model nemoCtc
-
-# Or using npm scripts
-npm run cli /path/to/media -- --model senseVoice
-npm run cli /path/to/media -- --model transducer
-npm run cli /path/to/media -- --model nemoCtc
-```
+node gensrt-cli.js /path/to/media/folder --model senseVoice
+node gensrt-cli.js /path/to/media/folder --model transducer
+node gensrt-cli.js /path/to/media/folder --model nemoCtc
 
 The CLI script provides progress bars and real-time feedback during the transcription process.
 
@@ -91,10 +85,10 @@ node srt-gtk.js /path/to/srt/folder sourceLanguage targetLanguage
 
 Example - support auto detect language of srt, or specify language of srt used.
 ```bash
-node srt-gtk.js ./subtitles auto zh
+node srt-gtk.js /path/to/srt/folder auto zh
 ```
 ```bash
-node srt-gtk.js ./subtitles en zh
+node srt-gtk.js /path/to/srt/folder en zh
 ```
 
 The script will create new SRT files with `-targetLanguage` suffix (e.g., `movie-zh.srt`) under same folder.
@@ -103,7 +97,7 @@ The script will create new SRT files with `-targetLanguage` suffix (e.g., `movie
 
 Start the server:
 ```bash
-node server.js
+node --expose-gc server.js
 ```
 
 Access the web interface at `http://localhost:3000` to manage transcription and translation tasks.
