@@ -1,9 +1,6 @@
-// gensrt.js - Optimized for better memory management
 import path from 'path';
-import { createReadStream, promises as fs } from 'fs';
+import { promises as fs } from 'fs';
 import { spawn } from 'child_process';
-import { pipeline } from 'stream/promises';
-import { Writable } from 'stream';
 import sherpa_onnx from 'sherpa-onnx-node';
 import ffmpegInstaller from '@ffmpeg-installer/ffmpeg';
 import ffprobeInstaller from '@ffprobe-installer/ffprobe';
@@ -11,7 +8,6 @@ import cliProgress from 'cli-progress';
 import chalk from 'chalk';
 import { getModel } from './modelConfig.js';
 import os from 'os';
-import { Worker, isMainThread, workerData, parentPort } from 'worker_threads';
 
 const ffmpegPath = ffmpegInstaller.path;
 const ffprobePath = ffprobeInstaller.path;
@@ -105,7 +101,8 @@ class Segment {
     return this.start + this.duration;
   }
   toString() {
-    return `${formatTime(this.start)} --> ${formatTime(this.end)}\n${this.text}`;
+    return `${formatTime(this.start)} --> ${formatTime(this.end)}
+${this.text}`;
   }
 }
 
@@ -132,17 +129,19 @@ async function saveSrt(segments, outPath) {
   if (!segments || !segments.length) return;
   segments.sort((a, b) => a.start - b.start);
   const merged = mergeSegments(segments);
-  const srtContent = merged.map((s, i) => `${i + 1}\n${s.toString()}`).join("\n\n");
+  const srtContent = merged.map((s, i) => `${i + 1}n${s.toString()}`).join("nn");
   await fs.writeFile(outPath, srtContent, "utf-8");
 }
 
 function safeFree(obj) {
+  if (!obj) return;
   try {
-    if (!obj) return;
     if (typeof obj.free === "function") obj.free();
     else if (typeof obj.delete === "function") obj.delete();
     else if (typeof obj.destroy === "function") obj.destroy();
-  } catch {}
+  } catch {
+    // Silently ignore errors when freeing objects
+  }
 }
 
 async function getAudioFiles(inputPath) {
@@ -158,7 +157,7 @@ async function getAudioFiles(inputPath) {
       try {
         const stat = await fs.stat(fullPath);
         if (stat.isFile() && audioExt.has(path.extname(entry).toLowerCase())) {
-          const srtPath = fullPath.replace(/\.[^.]*$/, ".srt");
+          const srtPath = fullPath.replace(/.[^.]*$/, ".srt");
           try {
             await fs.access(srtPath);
             console.log(chalk.yellow(`- Skipping ${path.basename(fullPath)} (SRT already exists)`));
@@ -166,10 +165,12 @@ async function getAudioFiles(inputPath) {
             filesToProcess.push(fullPath);
           }
         }
-      } catch {}
+      } catch {
+        // Silently ignore files that can't be stat'd
+      }
     }
   } else if (audioExt.has(path.extname(inputPath).toLowerCase())) {
-    const srtPath = inputPath.replace(/\.[^.]*$/, ".srt");
+    const srtPath = inputPath.replace(/.[^.]*$/, ".srt");
     try {
       await fs.access(srtPath);
       console.log(chalk.yellow(`- Skipping ${path.basename(inputPath)} (SRT already exists)`));
@@ -181,7 +182,7 @@ async function getAudioFiles(inputPath) {
 }
 
 async function getDuration(inputFile) {
-  return new Promise((resolve, reject) => {
+  return new Promise((resolve) => {
     const ffprobe = spawn(ffprobePath, [
       "-v",
       "error",
@@ -201,9 +202,9 @@ async function processFile(inputFile) {
   const filename = path.basename(inputFile);
   // Save SRT files directly to /sdcard/Download directory
   // Sanitize and truncate filename to prevent issues with long filenames or special characters
-  const baseName = filename.replace(/\.[^.]*$/, "");
+  const baseName = filename.replace(/.[^.]*$/, "");
   // More comprehensive sanitization that preserves Unicode characters including Mandarin
-  let safeBaseName = baseName.replace(/[<>:"/\\|?*\x00-\x1f]/g, '_'); // Replace problematic ASCII characters
+  let safeBaseName = baseName.replace(/[<>:"/|?u0000-u001f]/g, '_'); // Replace problematic ASCII characters
   // Truncate to a safe length while preserving Unicode characters
   if (Buffer.byteLength(safeBaseName, 'utf8') > 150) {
     // Gradually trim the string to fit within the byte limit
@@ -214,7 +215,8 @@ async function processFile(inputFile) {
   const srtFilename = `${safeBaseName}.srt`;
   const outPath = path.join("/sdcard/Download", srtFilename);
 
-  console.log(chalk.green(`\n▶️  Starting: ${filename}`));
+  console.log(chalk.green(`
+[PLAY] Starting: ${filename}`));
 
   const recognizer = createRecognizer();
   const vad = createVad();
@@ -238,17 +240,6 @@ async function processFile(inputFile) {
 
   // Add periodic progress output for server.js to capture
   const progressInterval = setInterval(() => {
-    const elapsed = (Date.now() - startTime) / 1000;
-    const speed = elapsed > 0 ? processed / elapsed : 0;
-    // Fix for inaccurate time remaining: ensure remaining time doesn't go below 0
-    let remaining = 0;
-    if (speed > 0) {
-      remaining = Math.max(0, (duration - processed) / speed);
-    }
-    // When processed reaches or exceeds duration, set remaining to 0
-    if (processed >= duration) {
-      remaining = 0;
-    }
     console.log(`Progress: ${Math.round((processed / duration) * 100)}% | ${processed.toFixed(1)}/${duration.toFixed(1)}s`);
   }, 1000); // Output progress every second
 
@@ -263,7 +254,8 @@ async function processFile(inputFile) {
       safeFree(recognizer);
       safeFree(buffer);
       const errorMsg = `Failed to spawn FFmpeg: ${spawnError.message}`;
-      console.error(chalk.red(`\n❌ Error processing ${filename}: ${errorMsg}`));
+      console.error(chalk.red(`
+[ERROR] Error processing ${filename}: ${errorMsg}`));
       return reject(new Error(errorMsg));
     }
 
@@ -306,12 +298,13 @@ async function processFile(inputFile) {
         safeFree(recognizer);
         safeFree(buffer);
         const errorMsg = `FFmpeg exited with code ${code}. Error: ${ffmpegError}`;
-        console.error(chalk.red(`\n❌ Error processing ${filename}: ${errorMsg}`));
+        console.error(chalk.red(`
+[ERROR] Error processing ${filename}: ${errorMsg}`));
         return reject(new Error(errorMsg));
       }
 
       try {
-        console.log(chalk.green("   Finalizing transcription..."));
+        console.log(chalk.green("   [FINALIZING] Finalizing transcription..."));
         vad.flush();
         const segments = [];
 
@@ -344,13 +337,14 @@ async function processFile(inputFile) {
         await saveSrt(segments, outPath);
 
         const elapsedTotal = (Date.now() - startTime) / 1000;
-        console.log(chalk.green(`✅ Done! Output: ${outPath}`));
+        console.log(chalk.green(`[DONE] Done! Output: ${outPath}`));
         console.log(chalk.blue(`   - Segments: ${segments.length}, Duration: ${duration.toFixed(2)}s`));
         console.log(chalk.blue(`   - Time: ${elapsedTotal.toFixed(2)}s, Speed: ${(duration / elapsedTotal).toFixed(2)}x`));
         resolve();
 
       } catch (error) {
-        console.error(chalk.red(`\n❌ Error during final transcription of ${filename}: ${error.message}`));
+        console.error(chalk.red(`
+[ERROR] Error during final transcription of ${filename}: ${error.message}`));
         reject(error);
       } finally {
         safeFree(vad);
@@ -359,7 +353,7 @@ async function processFile(inputFile) {
       }
     });
 
-    ffmpeg.on("error", (err) => {
+    ffmpeg.on("error", (error) => {
       clearInterval(progressInterval); // Stop the progress interval
       // Send final progress update to ensure UI shows error state
       console.log(`Progress: 0% | 0.0/${duration.toFixed(1)}s`);
@@ -367,14 +361,15 @@ async function processFile(inputFile) {
       safeFree(vad);
       safeFree(recognizer);
       safeFree(buffer);
-      console.error(chalk.red(`\n❌ FFmpeg spawn error for ${filename}: ${err.message}`));
-      reject(err);
+      console.error(chalk.red(`
+[ERROR] FFmpeg spawn error for ${filename}: ${error.message}`));
+      reject(error);
     });
   });
 }
 async function main() {
   try {
-    console.log(chalk.blue("🔍 Searching for files to process..."));
+    console.log(chalk.blue("馃攳 [SEARCH] Searching for files to process..."));
     const filesToProcess = await getAudioFiles(inputPath);
 
     if (filesToProcess.length === 0) {
@@ -382,25 +377,26 @@ async function main() {
       return;
     }
 
-    console.log(chalk.blue(`📂 Found ${filesToProcess.length} file(s) to process.`));
+    console.log(chalk.blue(`[FOLDER] Found ${filesToProcess.length} file(s) to process.`));
     const startTime = Date.now();
 
     for (const file of filesToProcess) {
       try {
         await processFile(file);
-      } catch (err) {
-        console.error(chalk.yellow(`⚠️ Skipping to next file due to error.`));
+      } catch {
+        console.error(chalk.yellow(`鈿狅笍 Skipping to next file due to error.`));
       }
     }
 
     const totalTime = (Date.now() - startTime) / 1000;
-    console.log(chalk.green(`\n🎉 All processing complete! Total time: ${totalTime.toFixed(2)}s`));
+    console.log(chalk.green(`
+[COMPLETE] All processing complete! Total time: ${totalTime.toFixed(2)}s`));
 
   } catch (error) {
     if (error.code === "ENOENT") {
-      console.error(chalk.red(`❌ Error: The path "${inputPath}" does not exist.`));
+      console.error(chalk.red(`[ERROR] Error: The path "${inputPath}" does not exist.`));
     } else {
-      console.error(chalk.red(`❌ An unexpected error occurred: ${error.message}`));
+      console.error(chalk.red(`[ERROR] An unexpected error occurred: ${error.message}`));
     }
     process.exit(1);
   }
