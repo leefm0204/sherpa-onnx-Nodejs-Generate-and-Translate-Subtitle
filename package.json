@@ -1,11 +1,11 @@
 {
-  "name": "audio-video-transcriber-server",
+  "name": "Nodejs Subtitle Generator & Translator",
   "version": "1.0.0",
-  "description": "Web-based audio/video transcription server using Sherpa-ONNX",
+  "description": "Subtitle Generator & Translator using commandline and nodejs server",
   "main": "server.js",
   "scripts": {
     "start": "LD_LIBRARY_PATH=$PWD/node_modules/sherpa-onnx-linux-arm64:$LD_LIBRARY_PATH node --expose-gc server.js",
-    "cli": "LD_LIBRARY_PATH=$PWD/node_modules/sherpa-onnx-linux-arm64:$LD_LIBRARY_PATH node cli.js",
+    "cli": "LD_LIBRARY_PATH=$PWD/node_modules/sherpa-onnx-linux-arm64:$LD_LIBRARY_PATH node gensrt-cli.js",
     "dev": "LD_LIBRARY_PATH=$PWD/node_modules/sherpa-onnx-linux-arm64:$LD_LIBRARY_PATH node --expose-gc server.js"
   },
   "keywords": [
