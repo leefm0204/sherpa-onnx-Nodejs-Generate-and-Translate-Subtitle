@@ -1,25 +1,11 @@
-# Sherpa-Onnx Subtitle Generator & Translator
+# Nodejs Sherpa-Onnx Subtitle Generator & Translator
 
-Generate and translate subtitles using Sherpa-Onnx node-addon-api and Google Translate.
-
-## Overview
-
-This project provides a complete solution for generating and translating subtitles from audio/video files. It uses the high-performance Sherpa-Onnx engine for speech recognition and Google Translate for subtitle translation, with both web interface and command-line tools.
-
-## Core Components
-
-1. `gensrt-cli.js` - Command-line interface for generating subtitles with support for multiple models:
-   - SenseVoice: Chinese, English, Japanese, Korean, Cantonese
-   - Zipformer: Japanese
-   - NeMo CTC: 10 European languages (Belarusian, German, English, Spanish, French, Croatian, Italian, Polish, Russian, Ukrainian)
-2. `srt-gtk.js` - Translates SRT subtitles using free Google Translate
-3. `server.js` - Web interface for managing transcription and translation tasks
-4. `fileupload.js` - Handles file uploads with original names and automatic cleanup
+Generate and translate subtitles using Sherpa-Onnx node-addon-api that are 2 to 3 times faster than using python and translate subtitle using Google Translate.
 
 ## Features
 
-### Subtitle Generator
-- Uses Sherpa-ONNX SenseVoice model for accurate speech recognition in multiple languages (Chinese, English, Japanese, Korean, Cantonese) or Zipformer model for Japanese, or NeMo CTC model for 10 European languages (Belarusian, German, English, Spanish, French, Croatian, Italian, Polish, Russian, Ukrainian)
+### Subtitle Generator (gensrt-cli.js)
+- generate subtitle with commandline Uses Sherpa-ONNX SenseVoice model for accurate speech recognition in multiple languages (Chinese, English, Japanese, Korean, Cantonese) or Zipformer model for Japanese, or NeMo CTC model for 10 European languages (Belarusian, German, English, Spanish, French, Croatian, Italian, Polish, Russian, Ukrainian)
 - Voice Activity Detection (VAD) to process only speech segments
 - Progress tracking with speed metrics
 - Automatic SRT file generation
@@ -57,16 +43,11 @@ Export LD_LIBRARY_PATH based on your architecture, for example:
 ```bash
 export LD_LIBRARY_PATH=$PWD/node_modules/sherpa-onnx-linux-arm64:$LD_LIBRARY_PATH
 ```
-
-For a more convenient command-line interface, you can use the `gensrt-cli.js` script directly or through npm:
+for use with commandline
 
 ```bash
 # Direct usage
-node gensrt-cli.js /path/to/media --model <modelName>
-
-# Or using npm script
-npm run cli /path/to/media/folder -- --model <modelName>
-```
+node gensrt-cli.js /path/to/media/folder --model <modelName>
 
 Example usage:
 ```bash
@@ -100,10 +81,10 @@ Start the server:
 node --expose-gc server.js
 ```
 
-Access the web interface at `http://localhost:3000` to manage transcription and translation tasks.
+Access the web interface at `http://localhost:3000` to manage transcription and translation p.
 
 ## System Requirements
 
 - Node.js 14.0 or higher
 - FFmpeg and FFprobe (automatically installed via npm dependencies)
-- Sherpa-Onnx models (automatically downloaded)
+- Model folder need to place in same folder with nodejs script.
