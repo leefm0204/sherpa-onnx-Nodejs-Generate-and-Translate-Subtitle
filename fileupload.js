@@ -16,7 +16,7 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
 const uploadsDir = path.join(__dirname, 'uploads');
-const downloadDir = '/sdcard/Download'; // adjust if different on your device
+const downloadDir = process.env.DOWNLOAD_DIR || '/sdcard/Download';
 
 // ensure uploads dir exists
 await fs.promises.mkdir(uploadsDir, { recursive: true });
@@ -157,15 +157,8 @@ async function renameSrtToOriginal(srtPath) {
   const targetPath = path.join(downloadDir, safeSrtFilename);
 
   try {
-    // If target exists, remove it (overwrite behavior)
-    try {
-      await fs.promises.access(targetPath);
-      await fs.promises.unlink(targetPath);
-    } catch {
-      // not exist or couldn't unlink — continue with copy/rename attempt
-    }
-
-    // Try rename (fast) then fallback to streaming copy if rename fails across devices
+    // Try rename (fast) then fallback to streaming copy if rename fails across devices.
+    // fs.promises.rename will overwrite the destination file if it already exists.
     try {
       await fs.promises.rename(srtPath, targetPath);
     } catch {
@@ -217,29 +210,15 @@ async function deleteUploadedFile(base) {
 }
 
 async function deleteUploadedFileByMatch(srtBase) {
-  try {
-    const uploadedFiles = await fs.promises.readdir(uploadsDir);
-    for (const uploadedFile of uploadedFiles) {
-      const uploadedExtension = path.extname(uploadedFile);
-      const uploadedBase = path.basename(uploadedFile, uploadedExtension);
-      const cleanUploadedBase = uploadedBase.replace(/ \(\d+\)$/, '');
-      if (uploadedBase === srtBase || cleanUploadedBase === srtBase) {
-        const uploadedPath = path.join(uploadsDir, uploadedFile);
-        try {
-          await fs.promises.unlink(uploadedPath);
-          console.log(`Deleted uploaded file (best-effort match): ${uploadedFile}`);
-          return true;
-        } catch (error) {
-          console.warn(`Failed to delete ${uploadedFile}: ${error.message}`);
-        }
-      }
+  // Fallback: iterate through the map to find a match if direct lookup fails.
+  for (const [key, info] of uploadMap.entries()) {
+    if (info.uploadedBase === srtBase || info.originalBase === srtBase) {
+      console.log(`Found matching file in map for SRT base: ${srtBase}`);
+      return await deleteUploadedFile(key); // Use the key to delete
     }
-    console.log(`No matching uploaded file found for SRT base: ${srtBase}`);
-    return false;
-  } catch (error) {
-    console.warn('Could not list uploads for best-effort delete:', error.message);
-    return false;
   }
+  console.log(`No matching uploaded file found in map for SRT base: ${srtBase}`);
+  return false;
 }
 
 /* ---------- Combined cleanup ---------- */
@@ -321,15 +300,7 @@ function uploadSingleFile(fieldName = 'file') {
           
           // Only rename if the paths are different
           if (request.file.path !== newPath) {
-            // If file exists, remove it first so we overwrite cleanly
-            try {
-              await fs.promises.access(newPath);
-              await fs.promises.unlink(newPath);
-            } catch {
-              // File doesn't exist, which is fine
-            }
-            
-            // Rename the temporary file to our normalized name
+            // Rename the temporary file to our normalized name. This will overwrite if the file exists.
             await fs.promises.rename(request.file.path, newPath);
           }
 

@@ -7,7 +7,7 @@ import { fileURLToPath } from 'node:url';
 import express from 'express';
 import { WebSocketServer } from 'ws';
 
-import { uploadSingleFile, cleanupUploadedFiles } from './fileupload.js';
+import { uploadSingleFile, cleanupUploadedFiles, uploadsDir } from './fileupload.js';
 import { getCachedSystemInfo } from './cache-optimization.js';
 
 // Enable explicit garbage collection
@@ -19,7 +19,22 @@ if (global.gc) {
 
 // active process refs - changed to support multiple processes
 let activeTranscriptionProcesses = new Map(); // Map to track multiple processes
-let activeTranslationProcess = null;
+let activeTranslationProcesses = new Map(); // Map to track multiple translation processes
+
+// Function to clean uploads folder
+async function cleanUploadsFolder() {
+  try {
+    const files = await fs.readdir(uploadsDir);
+    for (const file of files) {
+      const filePath = path.join(uploadsDir, file);
+      await fs.unlink(filePath);
+      console.log(`Cleaned up file from uploads folder: ${file}`);
+    }
+    console.log('Uploads folder cleaned successfully');
+  } catch (error) {
+    console.warn('Error cleaning uploads folder:', error.message);
+  }
+}
 
 // Track uploaded files for cleanup and to determine SRT output location
 let uploadedFiles = new Set();
@@ -82,8 +97,6 @@ app.post('/api/upload', uploadSingleFile('file'), async (request, res) => {
         
         const transcriberPath = path.join(__dirname, 'gensrt.js');
         // This is an uploaded file
-        // Get the current concurrency setting from the UI
-        const concurrency = transcriptionState.currentConcurrency || 1;
         const transcriberArguments = [transcriberPath, filePath, '--model', 'senseVoice'];
         
         const transcriber = spawnDetached('node', transcriberArguments, {
@@ -128,7 +141,16 @@ app.post('/api/upload', uploadSingleFile('file'), async (request, res) => {
                   lastProgress = progress;
                   const elapsed = (Date.now() - startTime) / 1000;
                   const speed = elapsed > 0 ? processed / elapsed : 0;
-                  const remaining = speed > 0 ? (total - processed) / speed : 0;
+                  // Fix for inaccurate time remaining: ensure remaining time doesn't go below 0
+                  // and account for the fact that SRT saving starts before time reaches zero
+                  let remaining = 0;
+                  if (speed > 0) {
+                    remaining = Math.max(0, (total - processed) / speed);
+                  }
+                  // When progress reaches 100%, set remaining to 0 immediately
+                  if (progress >= 100) {
+                    remaining = 0;
+                  }
                   broadcast({ type: 'transcription_progress', filename, progress, processed, duration: total, elapsed, remaining, speed });
                 }
               }
@@ -257,7 +279,7 @@ app.post('/api/upload-srt', uploadSingleFile('file'), async (request, res) => {
         });
         
         console.log('Spawned translator pid=', translator.pid);
-        activeTranslationProcess = translator;
+        activeTranslationProcesses.set(translator.pid, translator);
         
         if (translator.stdout) translator.stdout.on('data', d => broadcast({ type: 'debug_output', output: d.toString() }));
         if (translator.stderr) translator.stderr.on('data', d => broadcast({ type: 'debug_output', output: d.toString() }));
@@ -268,19 +290,23 @@ app.post('/api/upload-srt', uploadSingleFile('file'), async (request, res) => {
           if (code === 0) {
             if (index !== -1) translationState.translationQueue[index].status = 'completed';
             broadcast({ type: 'translation_state', state: translationState });
-            broadcast({ type: 'translation_complete', filename, outPath: filePath.replace(/\.srt$/i, `-en.srt`) });
+            broadcast({ type: 'translation_complete', filename, outPath: path.join('/sdcard/Download', path.basename(filePath).replace(/\.srt$/i, `-en.srt`)) });
           } else {
             if (index !== -1) translationState.translationQueue[index].status = 'error';
             broadcast({ type: 'translation_state', state: translationState });
             broadcast({ type: 'translation_error', filename, error: `Translation failed with code ${code} signal ${signal}` });
           }
-          if (activeTranslationProcess && activeTranslationProcess.pid === translator.pid) {
-            activeTranslationProcess = null;
+          if (activeTranslationProcesses.has(translator.pid)) {
+            activeTranslationProcesses.delete(translator.pid);
           }
           
-          // Remove uploaded file from tracking
+          // Remove uploaded file from tracking and delete it from filesystem
           if (uploadedFiles.has(filePath)) {
             uploadedFiles.delete(filePath);
+            // Call cleanup function to delete the actual file
+            cleanupUploadedFiles([filePath]).catch(error => {
+              console.warn(`Failed to clean up uploaded file ${filePath}:`, error.message);
+            });
           }
         });
         
@@ -290,13 +316,17 @@ app.post('/api/upload-srt', uploadSingleFile('file'), async (request, res) => {
           if (index_ !== -1) translationState.translationQueue[index_].status = 'error';
           broadcast({ type: 'translation_state', state: translationState });
           broadcast({ type: 'translation_error', filename, error: `Failed to start translator: ${error.message}` });
-          if (activeTranslationProcess && activeTranslationProcess.pid === translator.pid) {
-            activeTranslationProcess = null;
+          if (activeTranslationProcesses.has(translator.pid)) {
+            activeTranslationProcesses.delete(translator.pid);
           }
           
-          // Remove uploaded file from tracking
+          // Remove uploaded file from tracking and delete it from filesystem
           if (uploadedFiles.has(filePath)) {
             uploadedFiles.delete(filePath);
+            // Call cleanup function to delete the actual file
+            cleanupUploadedFiles([filePath]).catch(error => {
+              console.warn(`Failed to clean up uploaded file ${filePath}:`, error.message);
+            });
           }
         });
       } catch (error) {
@@ -313,14 +343,36 @@ app.post('/api/upload-srt', uploadSingleFile('file'), async (request, res) => {
   }
 });
 
+// Create HTTP server
 const server = app.listen(PORT, () => {
   console.log(`Server running at http://localhost:${PORT}`);
   logMemoryUsage('Server started');
 });
-const wss = new WebSocketServer({ server });
+
+// Initialize WebSocket server with enhanced configuration
+const wss = new WebSocketServer({ 
+  server,
+  clientTracking: true,
+  maxPayload: 10 * 1024 * 1024, // 10MB max payload
+  perMessageDeflate: {
+    zlibDeflateOptions: {
+      chunkSize: 1024,
+      memLevel: 7,
+      level: 3
+    },
+    zlibInflateOptions: {
+      chunkSize: 10 * 1024
+    },
+    clientNoContextTakeover: true,
+    serverNoContextTakeover: true,
+    serverMaxWindowBits: 10,
+    concurrencyLimit: 10,
+    threshold: 1024
+  }
+});
 
 // ---- in-memory state ----
-let transcriptionState = { filesList: [], currentConcurrency: 1 };          // { name, status: 'pending'|'processing'|'completed'|'error' }
+let transcriptionState = { filesList: [] };          // { name, status: 'pending'|'processing'|'completed'|'error' }
 let translationState = { translationQueue: [] };     // { filename, status: 'queued'|'processing'|'completed'|'error' }
 
 // ---- helpers ----
@@ -435,9 +487,9 @@ app.get('/language.json', async (request, res) => {
 // -------------------- Transcription endpoint --------------------
 app.post('/api/start', async (request, res) => {
   console.log('Transcription endpoint called with:', request.body);
-  const { inputPath, model = 'senseVoice', concurrency = 1 } = request.body;
+  const { inputPath, model = 'senseVoice' } = request.body;
 
-  const validModels = ['senseVoice', 'transducer'];
+  const validModels = ['senseVoice', 'nemoCtc', 'transducer'];
   if (!inputPath) return res.status(400).json({ error: 'File path is required' });
   if (!validModels.includes(model)) return res.status(400).json({ error: `Invalid model: ${validModels.join(', ')}` });
 
@@ -459,8 +511,6 @@ app.post('/api/start', async (request, res) => {
     }
 
     transcriptionState.filesList = files.map(f => ({ name: path.basename(f), status: 'pending' }));
-    // Store current concurrency setting for uploaded files
-    transcriptionState.currentConcurrency = concurrency;
     // Reset cancellation flags when starting new transcription
     cancelAllTranscription = false;
     cancelTranscription = false;
@@ -546,7 +596,16 @@ app.post('/api/start', async (request, res) => {
                 lastProgress = progress;
                 const elapsed = (Date.now() - startTime) / 1000;
                 const speed = elapsed > 0 ? processed / elapsed : 0;
-                const remaining = speed > 0 ? (total - processed) / speed : 0;
+                // Fix for inaccurate time remaining: ensure remaining time doesn't go below 0
+                // and account for the fact that SRT saving starts before time reaches zero
+                let remaining = 0;
+                if (speed > 0) {
+                  remaining = Math.max(0, (total - processed) / speed);
+                }
+                // When progress reaches 100%, set remaining to 0 immediately
+                if (progress >= 100) {
+                  remaining = 0;
+                }
                 broadcast({ type: 'transcription_progress', filename, progress, processed, duration: total, elapsed, remaining, speed });
                 
                 // Periodic garbage collection during long processes
@@ -712,7 +771,7 @@ app.post('/api/translate', async (request, res) => {
       });
 
       console.log('Spawned translator pid=', translator.pid);
-      activeTranslationProcess = translator;
+      activeTranslationProcesses.set(translator.pid, translator);
 
       if (translator.stdout) {
         let progressCounter = 0;
@@ -735,15 +794,24 @@ app.post('/api/translate', async (request, res) => {
           if (code === 0) {
             if (index !== -1) translationState.translationQueue[index].status = 'completed';
             broadcast({ type: 'translation_state', state: translationState });
-            broadcast({ type: 'translation_complete', filename, outPath: file.replace(/\.srt$/i, `-${targetLang}.srt`) });
+            broadcast({ type: 'translation_complete', filename, outPath: path.join('/sdcard/Download', path.basename(file).replace(/\.srt$/i, `-${targetLang}.srt`)) });
             logMemoryUsage(`Completed translation for ${filename}`);
           } else {
             if (index !== -1) translationState.translationQueue[index].status = 'error';
             broadcast({ type: 'translation_state', state: translationState });
             broadcast({ type: 'translation_error', filename, error: `Translation failed with code ${code} signal ${signal}` });
           }
-          if (activeTranslationProcess && activeTranslationProcess.pid === translator.pid) {
-            activeTranslationProcess = null;
+          if (activeTranslationProcesses.has(translator.pid)) {
+            activeTranslationProcesses.delete(translator.pid);
+          }
+          
+          // Clean up uploaded file after translation completes
+          if (uploadedFiles.has(file)) {
+            uploadedFiles.delete(file);
+            // Call cleanup function to delete the actual file
+            cleanupUploadedFiles([file]).catch(error => {
+              console.warn(`Failed to clean up uploaded file ${file}:`, error.message);
+            });
           }
           
           // Explicitly remove listeners to prevent memory leaks
@@ -759,8 +827,17 @@ app.post('/api/translate', async (request, res) => {
           if (index_ !== -1) translationState.translationQueue[index_].status = 'error';
           broadcast({ type: 'translation_state', state: translationState });
           broadcast({ type: 'translation_error', filename, error: `Failed to start translator: ${error.message}` });
-          if (activeTranslationProcess && activeTranslationProcess.pid === translator.pid) {
-            activeTranslationProcess = null;
+          if (activeTranslationProcesses.has(translator.pid)) {
+            activeTranslationProcesses.delete(translator.pid);
+          }
+          
+          // Clean up uploaded file even if translation fails
+          if (uploadedFiles.has(file)) {
+            uploadedFiles.delete(file);
+            // Call cleanup function to delete the actual file
+            cleanupUploadedFiles([file]).catch(error => {
+              console.warn(`Failed to clean up uploaded file ${file}:`, error.message);
+            });
           }
           
           // Explicitly remove listeners to prevent memory leaks
@@ -775,6 +852,9 @@ app.post('/api/translate', async (request, res) => {
       });
     }
 
+    // Clean up uploaded files after translation completes
+    await cleanupUploadedFilesHandler();
+    
     res.json({ success: true, message: 'Translation started successfully' });
   } catch (error) {
     console.error('Failed to start translation:', error);
@@ -813,131 +893,364 @@ app.get('/system-info', async (request, res) => {
   }
 });
 
-// -------------------- WebSocket control handlers --------------------
-wss.on('connection', ws => {
-  console.log('WS client connected');
-  // send initial states
-  ws.send(JSON.stringify({ type: 'state_update', state: transcriptionState }));
-  ws.send(JSON.stringify({ type: 'translation_state', state: translationState }));
+// -------------------- WebSocket Server Setup --------------------
+// WebSocket server is initialized at the top of the file
 
-  ws.on('message', raw => {
+// Track connected clients and their states
+const clients = new Map();
+const MESSAGE_TYPES = {
+  STATE_UPDATE: 'state_update',
+  TRANSLATION_STATE: 'translation_state',
+  PING: 'ping',
+  PONG: 'pong',
+  ERROR: 'error'
+};
+
+// Heartbeat interval (30 seconds)
+const HEARTBEAT_INTERVAL = 30000;
+let heartbeatInterval;
+
+// Start heartbeat
+function startHeartbeat() {
+  if (heartbeatInterval) clearInterval(heartbeatInterval);
+  
+  heartbeatInterval = setInterval(() => {
+    wss.clients.forEach((ws) => {
+      if (!ws.isAlive) {
+        console.log('Terminating non-responsive WebSocket connection');
+        return ws.terminate();
+      }
+      
+      ws.isAlive = false;
+      try {
+        ws.ping();
+      } catch (err) {
+        console.error('Error sending ping:', err);
+      }
+    });
+  }, HEARTBEAT_INTERVAL);
+}
+
+// Rate limiting
+const rateLimit = (ws, type) => {
+  const client = clients.get(ws);
+  if (!client) return false;
+  
+  const now = Date.now();
+  const windowStart = now - 1000; // 1 second window
+  
+  // Filter messages within the time window
+  client.messageTimestamps = client.messageTimestamps.filter(t => t > windowStart);
+  
+  // Check rate limit (10 messages per second)
+  if (client.messageTimestamps.length >= 10) {
+    console.warn(`Rate limit exceeded for client ${client.id}`);
+    return true;
+  }
+  
+  client.messageTimestamps.push(now);
+  return false;
+};
+
+// Handle stop transcription
+async function handleStopTranscription(ws, data) {
+  const client = clients.get(ws);
+  if (!client) return;
+  
+  console.log(`[${client.id}] Stopping all transcription processes...`);
+  cancelAllTranscription = true;
+  
+  // Kill all active transcription processes
+  const killPromises = [];
+  for (const [id, process] of activeTranscriptionProcesses.entries()) {
+    console.log(`[${client.id}] Killing transcription process ${id}`);
+    killPromises.push(tryKillProcessTree(process));
+    activeTranscriptionProcesses.delete(id);
+  }
+  
+  // Wait for all processes to be killed
+  await Promise.all(killPromises);
+  
+  // Reset states
+  transcriptionState = { filesList: [], isProcessing: false };
+  broadcast({ type: MESSAGE_TYPES.STATE_UPDATE, state: transcriptionState });
+  
+  console.log(`[${client.id}] All transcription processes stopped`);
+}
+
+// Handle stop translation
+async function handleStopTranslation(ws, data) {
+  const client = clients.get(ws);
+  if (!client) return;
+  
+  console.log(`[${client.id}] Stopping all translation processes...`);
+  cancelAllTranslation = true;
+  
+  // Kill all active translation processes
+  const killPromises = [];
+  for (const [id, process] of activeTranslationProcesses.entries()) {
+    console.log(`[${client.id}] Killing translation process ${id}`);
+    killPromises.push(tryKillProcessTree(process));
+    activeTranslationProcesses.delete(id);
+  }
+  
+  // Wait for all processes to be killed
+  await Promise.all(killPromises);
+  
+  // Reset states
+  translationState = { translationQueue: [], isProcessing: false };
+  broadcast({ type: MESSAGE_TYPES.TRANSLATION_STATE, state: translationState });
+  
+  console.log(`[${client.id}] All translation processes stopped`);
+}
+
+// Clean up client resources
+function cleanupClientResources(clientId) {
+  console.log(`Cleaning up resources for client ${clientId}`);
+  // Add any client-specific cleanup here
+}
+
+// Handle WebSocket connections
+wss.on('connection', (ws, req) => {
+  // Generate unique client ID and get client IP
+  const clientId = `${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+  const clientIp = req.socket.remoteAddress;
+  
+  console.log(`New WebSocket connection from ${clientIp} (${clientId})`);
+  
+  // Initialize client state
+  const client = {
+    id: clientId,
+    ip: clientIp,
+    isAlive: true,
+    messageTimestamps: [],
+    lastActivity: Date.now(),
+    subscriptions: new Set()
+  };
+  
+  // Store client
+  clients.set(ws, client);
+  
+  // Set up heartbeat
+  ws.isAlive = true;
+  ws.on('pong', () => {
+    ws.isAlive = true;
+    client.lastActivity = Date.now();
+  });
+  
+  // Send initial states
+  try {
+    ws.send(JSON.stringify({
+      type: MESSAGE_TYPES.STATE_UPDATE,
+      state: transcriptionState
+    }));
+    
+    ws.send(JSON.stringify({
+      type: MESSAGE_TYPES.TRANSLATION_STATE,
+      state: translationState
+    }));
+    
+    console.log(`Sent initial states to client ${clientId}`);
+  } catch (err) {
+    console.error(`Error sending initial states to client ${clientId}:`, err);
+  }
+  
+  // Handle incoming messages
+  ws.on('message', async (raw) => {
+    const startTime = process.hrtime();
+    let message;
+    
     try {
-      const data = JSON.parse(raw.toString());
-
-      // STOP transcription: kill process tree and set flag to stop all future processing
-      switch (data.type) {
-      case 'stop_process': {
-        console.log('WS: stop_process received. activeTranscriptionProcesses size=', activeTranscriptionProcesses.size);
-        // Set the global cancellation flag
-        cancelAllTranscription = true;
-        
-        // Kill all active processes
-        let killedCount = 0;
-        for (const [pid, process] of activeTranscriptionProcesses) {
-          const ok = tryKillProcessTree(process);
-          if (ok) killedCount++;
-        }
-        
-        if (killedCount > 0) {
-          ws.send(JSON.stringify({ type: 'info', message: `Stopping ${killedCount} transcription process(es)...` }));
-          // mark processing items as error (but do not clear the list)
-          for (const f of transcriptionState.filesList) { if (f.status === 'processing') f.status = 'error'; }
-          broadcast({ type: 'state_update', state: transcriptionState });
-          broadcast({ type: 'file_error', filename: 'process', error: 'Transcription manually stopped by user' });
-        } else {
-          ws.send(JSON.stringify({ type: 'info', message: 'No active transcription process to stop' }));
-        }
-        
-        // Clear the map of active processes
-        activeTranscriptionProcesses.clear();
+      // Update last activity
+      client.lastActivity = Date.now();
       
-      break;
-      }
-      case 'stop_translation': {
-        console.log('WS: stop_translation received. activeTranslationProcess pid=', activeTranslationProcess && activeTranslationProcess.pid);
-        // Set the global cancellation flag
-        cancelAllTranslation = true;
+      // Check rate limit first
+      if (rateLimit(ws, 'message')) {
+        const errorResponse = {
+          type: MESSAGE_TYPES.ERROR,
+          code: 'RATE_LIMIT_EXCEEDED',
+          message: 'Too many requests. Please slow down.',
+          timestamp: client.lastActivity
+        };
         
-        // Kill the active process if it exists
-        let killed = false;
-        if (activeTranslationProcess) {
-          const ok = tryKillProcessTree(activeTranslationProcess);
-          ws.send(JSON.stringify({ type: 'info', message: ok ? 'Stopping translation process...' : 'Failed to stop translation' }));
-          if (ok) {
-            for (const index of translationState.translationQueue) { if (index.status === 'processing') index.status = 'error'; }
-            broadcast({ type: 'translation_state', state: translationState });
-            broadcast({ type: 'translation_error', filename: 'translation', error: 'Translation manually stopped by user' });
-            killed = true;
-          }
-        } else {
-          ws.send(JSON.stringify({ type: 'info', message: 'No active translation process to stop' }));
+        if (!ws.send(JSON.stringify(errorResponse))) {
+          console.warn(`[${clientId}] Failed to send rate limit response - client may be disconnected`);
         }
-        
-        // If we didn't kill an active process but there are queued files, mark them as cancelled
-        if (!killed) {
-          for (const index of translationState.translationQueue) { 
-            if (index.status === 'queued') index.status = 'error'; 
-          }
+        return;
+      }
+      
+      // Parse message with size limit check
+      const messageStr = raw.toString();
+      if (messageStr.length > 1024 * 1024) { // 1MB max message size
+        throw new Error('Message size exceeds 1MB limit');
+      }
+      
+      // Parse and validate message
+      message = JSON.parse(messageStr);
+      
+      if (!message || typeof message !== 'object') {
+        throw new Error('Invalid message format: expected object');
+      }
+      
+      if (!message.type || typeof message.type !== 'string') {
+        throw new Error('Message must have a string "type" property');
+      }
+      
+      // Log message processing start for performance monitoring
+      const messageType = message.type;
+      console.debug(`[${clientId}] Processing message type: ${messageType}`);
+      
+      // Route message to appropriate handler
+      switch (messageType) {
+        case 'stop_process': // Legacy support
+        case 'stop_transcription':
+          console.log(`[${clientId}] Received ${message.type} command`);
+          await handleStopTranscription(ws, message);
+          break;
+          
+        case 'stop_translation':
+          console.log(`[${clientId}] Received stop_translation command`);
+          await handleStopTranslation(ws, message);
+          break;
+          
+        case 'ping':
+          ws.send(JSON.stringify({ type: 'pong', timestamp: Date.now() }));
+          break;
+          
+        case 'clear_translation':
+          console.log(`[${clientId}] Clearing translation queue`);
+          translationState.translationQueue = [];
+          cancelAllTranslation = false;
+          cancelTranslation = false;
+          broadcast({ type: 'info', message: 'Translation queue cleared' });
           broadcast({ type: 'translation_state', state: translationState });
-          broadcast({ type: 'translation_error', filename: 'translation', error: 'Translation manually stopped by user' });
-        }
-      
-      break;
-      }
-      case 'clear_translation': {
-        console.log('WS: clear_translation received');
-        translationState.translationQueue = [];
-        // Reset cancellation flags when clearing
-        cancelAllTranslation = false;
-        cancelTranslation = false;
-        broadcast({ type: 'info', message: 'Translation queue cleared' });
-        broadcast({ type: 'translation_state', state: translationState });
-      
-      break;
-      }
-      case 'clear_files': 
-      case 'clear_file_list': {
-        console.log('WS: clear_files received');
-        transcriptionState.filesList = [];
-        // Reset cancellation flags when clearing
-        cancelAllTranscription = false;
-        cancelTranscription = false;
-        broadcast({ type: 'info', message: 'File list cleared' });
-        broadcast({ type: 'state_update', state: transcriptionState });
-      
-      break;
-      }
-      case 'request_state': 
-      case 'query_status': {
-        // Reset cancellation flags when requesting new state (new transcription/translation starting)
-        cancelAllTranscription = false;
-        cancelAllTranslation = false;
-        
-        ws.send(JSON.stringify({
-          type: 'status',
-          transcription: { 
-            running: activeTranscriptionProcesses.size > 0, 
-            processCount: activeTranscriptionProcesses.size,
-            pids: [...activeTranscriptionProcesses.keys()]
-          },
-          translation: { running: !!activeTranslationProcess, pid: activeTranslationProcess && activeTranslationProcess.pid }
-        }));
-        // also send full states
-        ws.send(JSON.stringify({ type: 'state_update', state: transcriptionState }));
-        ws.send(JSON.stringify({ type: 'translation_state', state: translationState }));
-      
-      break;
-      }
-      default: {
-        // unrecognized control type
-        console.log('WS: unknown message type', data.type);
-      }
+          break;
+          
+        case 'clear_files':
+        case 'clear_file_list':
+          console.log(`[${clientId}] Clearing file list`);
+          transcriptionState.filesList = [];
+          cancelAllTranscription = false;
+          cancelTranscription = false;
+          broadcast({ type: 'info', message: 'File list cleared' });
+          broadcast({ type: 'state_update', state: transcriptionState });
+          break;
+          
+        case 'request_state':
+        case 'query_status':
+          // Reset cancellation flags when requesting new state
+          cancelAllTranscription = false;
+          cancelAllTranslation = false;
+          
+          ws.send(JSON.stringify({
+            type: 'status',
+            transcription: { 
+              running: activeTranscriptionProcesses.size > 0, 
+              processCount: activeTranscriptionProcesses.size,
+              pids: [...activeTranscriptionProcesses.keys()]
+            },
+            translation: { 
+              running: activeTranslationProcesses.size > 0, 
+              processCount: activeTranslationProcesses.size, 
+              pids: [...activeTranslationProcesses.keys()] 
+            }
+          }));
+          
+          // Send full states
+          ws.send(JSON.stringify({ type: 'state_update', state: transcriptionState }));
+          ws.send(JSON.stringify({ type: 'translation_state', state: translationState }));
+          break;
+          
+        default:
+          console.warn(`[${clientId}] Unknown message type: ${message.type}`);
+          ws.send(JSON.stringify({
+            type: MESSAGE_TYPES.ERROR,
+            code: 'UNKNOWN_MESSAGE_TYPE',
+            message: `Unknown message type: ${message.type}`
+          }));
       }
     } catch (error) {
-      console.error('WS parse error', error);
-      ws.send(JSON.stringify({ type: 'error', message: 'Invalid WS message' }));
+      const errorDetails = {
+        type: MESSAGE_TYPES.ERROR,
+        code: 'PROCESSING_ERROR',
+        message: 'Error processing message',
+        details: error.message,
+        timestamp: Date.now()
+      };
+      
+      // Log the error with context
+      console.error(`[${clientId}] Error processing message:`, {
+        error: error.message,
+        stack: error.stack,
+        messageType: message?.type,
+        messageId: message?.id
+      });
+      
+      // Try to send error response if possible
+      try {
+        if (ws.readyState === ws.OPEN) {
+          ws.send(JSON.stringify(errorDetails));
+        }
+      } catch (sendError) {
+        console.error(`[${clientId}] Failed to send error response:`, sendError);
+      }
+      
+      // Log performance metrics
+      const [seconds, nanoseconds] = process.hrtime(startTime);
+      const durationMs = (seconds * 1000) + (nanoseconds / 1000000);
+      console.debug(`[${clientId}] Message processed in ${durationMs.toFixed(2)}ms (error)`);
     }
   });
-
-  ws.on('close', () => console.log('WS client disconnected'));
+  
+  // Handle client disconnection
+  ws.on('close', (code, reason) => {
+    const closeInfo = {
+      clientId,
+      code,
+      reason: reason?.toString() || 'No reason provided',
+      connectedClients: clients.size - 1, // -1 because we haven't deleted yet
+      timestamp: new Date().toISOString()
+    };
+    
+    console.log(`[${clientId}] WebSocket connection closed:`, closeInfo);
+    
+    // Clean up resources
+    if (clients.has(ws)) {
+      clients.delete(ws);
+    }
+    cleanupClientResources(clientId);
+    
+    // Log memory usage after cleanup
+    logMemoryUsage(`After client ${clientId} disconnect`);
+  });
+  
+  // Handle errors
+  ws.on('error', (error) => {
+    const errorInfo = {
+      clientId,
+      error: error.message,
+      stack: error.stack,
+      timestamp: new Date().toISOString()
+    };
+    
+    console.error(`[${clientId}] WebSocket error:`, errorInfo);
+    
+    // Clean up resources
+    if (clients.has(ws)) {
+      clients.delete(ws);
+    }
+    cleanupClientResources(clientId);
+    
+    // Try to close the connection if it's still open
+    try {
+      if (ws.readyState === ws.OPEN) {
+        ws.close(1011, 'Internal server error');
+      }
+    } catch (closeError) {
+      console.error(`[${clientId}] Error closing WebSocket:`, closeError);
+    }
+  });
 });
+
+// Start heartbeat when server starts
+startHeartbeat();

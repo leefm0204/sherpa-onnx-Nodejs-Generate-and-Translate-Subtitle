@@ -1,5 +1,6 @@
 // cache-optimization.js - LRU and Redis caching optimizations
 import { promises as fs } from 'node:fs';
+import { createRequire } from 'node:module';
 
 import { createClient } from 'redis';
 import { LRUCache } from 'lru-cache';
@@ -18,46 +19,80 @@ let redisServer = null;
 let redisClient = null;
 let isRedisConnected = false;
 
-// Initialize Redis connection with embedded server
+// Create require function for ES modules
+const require = createRequire(import.meta.url);
+
+// Initialize Redis server and client
 async function initializeRedis() {
   try {
-    // Start embedded Redis server
-    redisServer = new RedisServer(6379);
+    // Start Redis server using the npm package
+    const redisServerPath = require.resolve('/usr/bin/redis-server');
+    const redisConfig = {
+      port: 6380, // Use a different port to avoid conflicts
+      // You can add more Redis configuration options here
+    };
+    
+    console.log('Starting Redis server...');
+    
+    // Start Redis server
+    redisServer = new RedisServer({
+      port: redisConfig.port,
+      bin: redisServerPath,
+      config: {
+        // Optional Redis configuration
+        'maxmemory': '100mb',
+        'maxmemory-policy': 'allkeys-lru',
+        'appendonly': 'no',
+        'save': '' // Disable RDB persistence for better performance
+      }
+    });
+    
+    // Start the Redis server
     await redisServer.open();
-    console.log('Embedded Redis server started on port 6379');
-
-    // Connect Redis client
+    console.log(`Redis server started on port ${redisConfig.port}`);
+    
+    // Configure Redis client
     redisClient = createClient({
       socket: {
         host: '127.0.0.1',
-        port: 6379,
+        port: redisConfig.port,
+        reconnectStrategy: (retries) => {
+          if (retries > 10) {
+            console.error('Too many retries on Redis connection. Giving up.');
+            return new Error('Too many retries');
+          }
+          // Exponential backoff
+          return Math.min(retries * 100, 5000);
+        }
       },
-      retryStrategy: (times) => {
-        // Retry connection with exponential backoff
-        const delay = Math.min(times * 50, 2000);
-        return delay;
-      },
+      // Disable offline queue to fail fast if Redis is down
+      disableOfflineQueue: true
     });
-
+    
+    // Set up event handlers
     redisClient.on('error', (error) => {
-      console.warn('Redis connection error:', error.message);
+      console.warn('Redis client error:', error.message);
       isRedisConnected = false;
     });
-
+    
     redisClient.on('connect', () => {
-      console.log('Redis connected successfully');
+      console.log('Redis client connected');
       isRedisConnected = true;
     });
-
+    
     redisClient.on('ready', () => {
       console.log('Redis client ready');
+      isRedisConnected = true;
     });
-
+    
     redisClient.on('reconnecting', () => {
-      console.log('Redis reconnecting...');
+      console.log('Redis client reconnecting...');
+      isRedisConnected = false;
     });
-
+    
+    // Connect the client
     await redisClient.connect();
+    console.log('Redis client connected successfully');
   } catch (error) {
     console.warn('Failed to initialize Redis client:', error.message);
     isRedisConnected = false;
@@ -260,21 +295,31 @@ export async function setTranslationCache(cacheData) {
 
 // Initialize Redis on module load
 initializeRedis().catch(error => {
-  console.warn('Failed to initialize Redis:', error.message);
+  console.error('Failed to initialize Redis:', error);
 });
 
 // Graceful shutdown
 async function shutdown() {
-  try {
-    if (redisClient && isRedisConnected) {
+  console.log('Shutting down Redis client...');
+  if (redisClient && redisClient.isOpen) {
+    try {
+      // Try to save data before quitting (if persistence is enabled)
+      await redisClient.save();
       await redisClient.quit();
+      console.log('Redis client disconnected');
+    } catch (error) {
+      console.error('Error during Redis client shutdown:', error);
     }
-    if (redisServer) {
+  }
+  
+  if (redisServer) {
+    console.log('Stopping Redis server...');
+    try {
       await redisServer.close();
-      console.log('Embedded Redis server stopped');
+      console.log('Redis server stopped');
+    } catch (error) {
+      console.error('Error stopping Redis server:', error);
     }
-  } catch (error) {
-    console.warn('Error during Redis shutdown:', error.message);
   }
 }
 

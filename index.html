@@ -65,7 +65,7 @@
             --glass-border: rgba(255, 255, 255, 0.1);
             --backdrop-blur: blur(20px);
             
-            <!-- Section Dividers -->
+            /* Section Dividers */
             --section-border: 1px solid var(--divider-color);
         }
 
@@ -207,10 +207,63 @@
 
         /* Main Content Layout */
         .main-content {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
+            display: flex;
             gap: 1.5rem;
             margin-bottom: 3rem;
+        }
+        
+        .upload-section,
+        .status-section {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+        }
+        
+        .upload-section .card,
+        .status-section .card {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+        }
+        
+        .upload-section .card-body,
+        .status-section .card-body {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            padding: 1.5rem;
+            box-sizing: border-box; /* Include padding in element's total width and height */
+            justify-content: space-between; /* Distribute space between elements */
+        }
+        
+        .status-section .card-body {
+            min-height: 400px; /* Minimum height for status sections */
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            padding: 1.5rem;
+            box-sizing: border-box; /* Include padding in element's total width and height */
+            justify-content: space-between; /* Distribute space between elements */
+        }
+        
+        .file-list {
+            flex: 1;
+            min-height: 300px;
+            max-height: 400px;
+            overflow-y: auto;
+            margin-bottom: 0; /* Remove bottom margin */
+        }
+        
+        .control-buttons {
+            margin-top: auto; /* Push buttons to the bottom */
+            display: flex;
+            gap: 1rem;
+            padding-top: 1.5rem;
+            border-top: 1px solid var(--border-subtle);
+            border: 1px solid var(--border-white);
+            border-radius: 12px;
+            padding: 1rem;
+            background: var(--surface-primary);
         }
 
         /* Section Headers */
@@ -339,14 +392,14 @@
 
         /* Input Sections - Organized Layout */
         .input-section {
-            margin-bottom: 1.5rem;
+            margin: 0 0 1.5rem 0; /* Remove top margin, keep bottom margin */
         }
         
         .input-section h3 {
             font-size: 1.125rem;
             font-weight: 600;
             color: var(--text-primary);
-            margin-bottom: 0.5rem;
+            margin: 0 0 0.5rem 0; /* Remove top margin, keep bottom margin */
             display: flex;
             align-items: center;
             gap: 0.75rem;
@@ -355,23 +408,31 @@
         .input-section .subtitle {
             color: var(--text-tertiary);
             font-size: 0.9rem;
-            margin-bottom: 1rem;
+            margin: 0 0 1rem 0; /* Remove top margin, keep bottom margin */
+        }
+        
+        .file-picker-section {
+            margin: 1rem 0 0 0; /* Remove bottom margin, keep top margin */
         }
         
         .input-row {
             display: grid;
             grid-template-columns: 1fr 1fr;
             gap: 1rem;
-            margin-bottom: 1rem;
+            margin: 0 0 1rem 0; /* Remove top margin, keep bottom margin */
+        }
+        
+        .input-row > :only-child {
+            grid-column: 1 / -1;
         }
         
         .button-row {
             display: flex;
             gap: 1rem;
-            margin-top: 1rem;
+            margin: 1rem 0 0 0; /* Remove bottom margin, keep top margin */
             flex-wrap: wrap;
         }
-        
+
         .button-row .btn {
             flex: 1;
             min-width: 120px;
@@ -380,8 +441,9 @@
         /* Divider */
         .divider {
             height: 1px;
-            background: var(--divider-color);
+            background: var(--border-subtle);
             margin: 1.5rem 0;
+            border: none;
         }
         
         /* Ensure proper overflow handling */
@@ -430,14 +492,13 @@
 
         .language-selects .input,
         .input#modelSelect,
-        .input#concurrencySelect,
         .input#srtPathInput {
             border: 1px solid var(--border-white);
         }
 
         /* Button Styling - Premium Feel */
         .btn {
-            padding: 1rem 2rem;
+            padding: 0.875rem 1.5rem;
             border: none;
             border-radius: 12px;
             font-weight: 600;
@@ -453,8 +514,10 @@
             overflow: hidden;
             font-family: inherit;
             width: 100%;
-            margin-top: 0.5rem;
+            margin: 0; /* Remove all margins */
             border: 1px solid var(--border-white);
+            box-sizing: border-box;
+            min-height: 44px;
         }
 
         .btn::before {
@@ -501,6 +564,31 @@
             transform: translateY(-1px);
         }
 
+        /* New colored buttons */
+        .btn-success {
+            background: var(--gradient-success);
+            color: white;
+            box-shadow: var(--shadow-md);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .btn-success:hover {
+            transform: translateY(-2px) scale(1.02);
+            box-shadow: var(--shadow-lg);
+        }
+
+        .btn-danger {
+            background: linear-gradient(135deg, #ff6b6b 0%, #ee5a24 100%);
+            color: white;
+            box-shadow: var(--shadow-md);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .btn-danger:hover {
+            transform: translateY(-2px) scale(1.02);
+            box-shadow: var(--shadow-lg);
+        }
+
         .btn:disabled {
             opacity: 0.6;
             cursor: not-allowed;
@@ -509,15 +597,17 @@
 
         /* File List - Enhanced Scrolling */
         .file-list {
+            flex: 1 1 auto; /* Allow flex grow and shrink */
             min-height: 300px;
             max-height: 400px;
             overflow-y: auto;
-            scrollbar-width: thin;
-            scrollbar-color: var(--border-default) transparent;
+            margin: 0; /* Remove all margins */
+            box-sizing: border-box; /* Include padding and border in element's total width and height */
             border: 1px solid var(--border-white);
             border-radius: 12px;
             padding: 0.5rem;
             background: var(--surface-primary);
+            align-self: stretch; /* Stretch to fill container width */
         }
 
         .file-list::-webkit-scrollbar {
@@ -545,13 +635,17 @@
             flex-direction: column;
             align-items: center;
             justify-content: center;
-            padding: 4rem 2rem;
+            padding: 2rem 1rem; /* Reduced padding */
             text-align: center;
             height: 100%;
+            min-height: 300px; /* Adjusted to match file-list min-height */
             opacity: 0.7;
             border: 1px solid var(--border-white);
             border-radius: 12px;
             background: var(--surface-primary);
+            margin: 0; /* Remove any margin */
+            box-sizing: border-box; /* Include padding and border in element's total width and height */
+            flex: 1 1 auto; /* Allow it to expand */
         }
 
         .empty-state i {
@@ -610,7 +704,7 @@
             display: flex;
             justify-content: space-between;
             align-items: center;
-            margin-bottom: 1rem;
+            margin: 0 0 1rem 0; /* Remove top margin, keep bottom margin */
         }
         
         .file-name {
@@ -746,20 +840,40 @@
             display: flex;
             gap: 1rem;
             padding-top: 1.5rem;
-            margin-top: 1.5rem;
+            margin-top: auto; /* Push buttons to the bottom */
             border-top: 1px solid var(--border-subtle);
             border: 1px solid var(--border-white);
             border-radius: 12px;
             padding: 1rem;
             background: var(--surface-primary);
+            margin: 0; /* Remove all margins */
+            position: relative; /* Ensure proper positioning */
+            z-index: 1; /* Ensure it's above other elements */
+            box-sizing: border-box; /* Include padding and border in element's total width and height */
+            flex-shrink: 0; /* Prevent shrinking */
         }
 
-        .control-buttons .btn {
+        /* File Picker Buttons */
+        .file-picker-buttons {
+            display: flex;
+            gap: 1rem;
+            border: 1px solid var(--border-white);
+            border-radius: 12px;
+            padding: 1rem;
+            background: var(--surface-primary);
+            margin: 1rem 0 0 0; /* Remove bottom margin, keep top margin */
+            box-sizing: border-box;
+            flex-shrink: 0; /* Prevent shrinking */
+        }
+
+        .control-buttons .btn,
+        .file-picker-buttons .btn {
             flex: 1;
             font-size: 0.9rem;
             padding: 0.875rem 1.5rem;
             width: auto;
-            margin: 0;
+            margin: 0; /* Ensure no extra margins on buttons */
+            min-height: 44px; /* Ensure consistent minimum height */
         }
 
         /* Alert Messages - Refined Design */
@@ -845,7 +959,6 @@
         }
 
         /* Responsive Design - Mobile First */
-        /* Responsive Design - Mobile First */
         @media (max-width: 768px) {
             .container {
                 padding: 1rem;
@@ -873,7 +986,8 @@
                 grid-template-columns: 1fr;
             }
 
-            .control-buttons {
+            .control-buttons,
+            .file-picker-buttons {
                 flex-direction: column;
             }
 
@@ -891,7 +1005,9 @@
                 flex-direction: column;
             }
             
-            .button-row .btn {
+            .button-row .btn,
+            .file-picker-buttons .btn,
+            .control-buttons .btn {
                 width: 100%;
             }
             
@@ -900,6 +1016,22 @@
             }
         }
         
+        /* Form Group Styling */
+        .form-group {
+            display: flex;
+            flex-direction: column;
+            flex: 1;
+            gap: 0.5rem;
+            margin: 0; /* Remove any margin */
+        }
+
+        .input-label {
+            font-size: 0.875rem;
+            color: var(--text-secondary);
+            font-weight: 500;
+            margin: 0; /* Remove any margin */
+        }
+
         /* Very small screens */
         @media (max-width: 480px) {
             .container {
@@ -923,6 +1055,17 @@
             
             .file-status {
                 align-self: flex-end;
+            }
+            
+            .control-buttons,
+            .file-picker-buttons {
+                flex-direction: column;
+            }
+            
+            .control-buttons .btn,
+            .file-picker-buttons .btn {
+                width: 100%;
+                padding: 0.875rem 1rem;
             }
         }
 
@@ -952,8 +1095,8 @@
         </div>
 
         <div class="section-header">
-            <h1>Audio/Video Transcriber</h1>
-            <p class="subtitle">Generate subtitles using Sherpa-Onnx Node.js with advanced speech recognition.</p>
+            <h1>Subtitle Generator and Translator</h1>
+            <p class="subtitle">Generate and translate subtitles using Sherpa-Onnx Node.js with advanced speech recognition.</p>
         </div>
 
         <div class="main-content">
@@ -969,13 +1112,15 @@
                             <p class="subtitle">Enter file or folder path directly on the server</p>
                             <input type="text" id="localPathInput" class="input" placeholder="Enter file or folder path...">
                             <div class="input-row">
-                                <select id="modelSelect" class="input">
-                                    <option value="senseVoice">SenseVoice (Multilingual)</option>
-                                    <option value="transducer">Transducer (Japanese)</option>
-                                </select>
-                                <select id="concurrencySelect" class="input">
-                                    <option value="1">Sequential Processing (1 file at a time)</option>
-                                </select>
+                                <div class="form-group">
+                                    <label for="modelSelect" class="input-label">Model</label>
+                                    <select id="modelSelect" class="input" aria-describedby="modelHelp">
+                                        <option value="senseVoice">SenseVoice (Multilingual: zh,en,ja,ko,yue)</option>
+                                        <option value="nemoCtc">NeMo CTC (Multilingual: be,de,en,es,fr,hr,it,pl,ru,uk)</option>
+                                        <option value="transducer">Transducer (Japanese only)</option>
+                                    </select>
+                                    <div id="modelHelp" class="visually-hidden">Select the speech recognition model to use</div>
+                                </div>
                             </div>
                             <button type="button" class="btn btn-primary" id="transcribePathBtn">
                                 <i class="fas fa-play"></i> Process Path
@@ -988,8 +1133,18 @@
                             <h3><i class="fas fa-cloud-upload-alt"></i> File Upload Processing</h3>
                             <p class="subtitle">Upload files from your device for transcription</p>
                             <div class="file-picker-section">
-                                <input type="file" id="filePicker" multiple style="display:none">
-                                <div class="button-row">
+                                <div class="visually-hidden">
+  <label for="filePicker">Select audio or video files for transcription</label>
+  <input 
+    type="file" 
+    id="filePicker" 
+    multiple 
+    accept="audio/*,video/*"
+    aria-describedby="filePickerHelp"
+    style="display:none">
+</div>
+<div id="filePickerHelp" class="visually-hidden">Supported formats: MP3, WAV, M4A, OGG, MP4, MKV, MOV, AVI, WEBM</div>
+                                <div class="file-picker-buttons">
                                     <button type="button" id="openFilePickerBtn" class="btn btn-secondary">
                                         <i class="fas fa-folder-open"></i> Browse Files
                                     </button>
@@ -1017,7 +1172,7 @@
                             </div>
                         </div>
                         <div class="control-buttons">
-                            <button type="button" class="btn btn-secondary" id="stopProcessBtn">
+                            <button type="button" class="btn btn-danger" id="stopProcessBtn">
                                 <i class="fas fa-stop"></i>
                                 Stop Process
                             </button>
@@ -1053,8 +1208,16 @@
                             <p class="subtitle">Enter SRT file or folder path directly on the server</p>
                             <input type="text" id="srtPathInput" class="input" placeholder="e.g., /absolute/path/to/your/file.srt" required>
                             <div class="input-row">
-                                <select id="sourceLang" class="input"></select>
-                                <select id="targetLang" class="input"></select>
+                                <div class="form-group">
+                                    <label for="sourceLang" class="input-label">Source Language</label>
+                                    <select id="sourceLang" class="input" aria-describedby="sourceLangHelp"></select>
+                                    <div id="sourceLangHelp" class="visually-hidden">Select the original language of the subtitles</div>
+                                </div>
+                                <div class="form-group">
+                                    <label for="targetLang" class="input-label">Target Language</label>
+                                    <select id="targetLang" class="input" aria-describedby="targetLangHelp"></select>
+                                    <div id="targetLangHelp" class="visually-hidden">Select the language to translate to</div>
+                                </div>
                             </div>
                             <button type="button" class="btn btn-primary" id="translateBtn">
                                 <i class="fas fa-language"></i> Translate Path
@@ -1067,8 +1230,18 @@
                             <h3><i class="fas fa-cloud-upload-alt"></i> SRT File Upload Translation</h3>
                             <p class="subtitle">Upload SRT files from your device for translation</p>
                             <div class="file-picker-section">
-                                <input type="file" id="srtFilePicker" multiple accept=".srt" style="display:none">
-                                <div class="button-row">
+                                <div class="visually-hidden">
+  <label for="srtFilePicker">Select SRT files for translation</label>
+  <input 
+    type="file" 
+    id="srtFilePicker" 
+    multiple 
+    accept=".srt" 
+    aria-describedby="srtFilePickerHelp"
+    style="display:none">
+</div>
+<div id="srtFilePickerHelp" class="visually-hidden">Select one or more SRT files to translate</div>
+                                <div class="file-picker-buttons">
                                     <button type="button" id="openSrtFilePickerBtn" class="btn btn-secondary">
                                         <i class="fas fa-folder-open"></i> Browse SRT Files
                                     </button>
@@ -1096,7 +1269,7 @@
                             </div>
                         </div>
                         <div class="control-buttons">
-                            <button type="button" class="btn btn-secondary" id="stopTranslationBtn">
+                            <button type="button" class="btn btn-danger" id="stopTranslationBtn">
                                 <i class="fas fa-stop"></i>
                                 Stop Translation
                             </button>
@@ -1310,17 +1483,19 @@
     
         const actions = fileItem.querySelector('.file-actions');
         if (status === 'processing') {
-          progressFill.style.width = '0%';
+          if (progressFill) progressFill.style.width = '0%';
           actions.innerHTML = '';
         } else if (status === 'uploaded') {
-          progressFill.style.width = '100%';
+          if (progressFill) progressFill.style.width = '100%';
           actions.innerHTML = `<p style="color:var(--info)">File uploaded successfully. Transcription started automatically.</p>`;
         } else if (status === 'completed') {
-          progressFill.style.width = '100%';
+          if (progressFill) progressFill.style.width = '100%';
           actions.innerHTML = `<p style="color:var(--success)">SRT generated: ${details.srtPath || ''}</p>`;
         } else if (status === 'error') {
-          progressFill.style.width = '100%';
-          progressFill.style.backgroundColor = 'var(--error)';
+          if (progressFill) {
+            progressFill.style.width = '100%';
+            progressFill.style.backgroundColor = 'var(--error)';
+          }
           actions.innerHTML = `<p style="color:var(--error)">Error: ${details.error || 'failed'}</p>`;
         }
       }
@@ -1335,7 +1510,11 @@
         const percentage = Math.min(100, progressData.progress || 0);
         progressFill.style.width = `${percentage}%`;
         if (elapsedElem) elapsedElem.textContent = progressData.elapsed ? progressData.elapsed.toFixed(1) : '0.0';
-        if (remainingElem) remainingElem.textContent = progressData.remaining ? progressData.remaining.toFixed(1) : '0.0';
+        // Fix for inaccurate time remaining display
+        if (remainingElem) {
+          const remainingValue = progressData.remaining ? Math.max(0, progressData.remaining).toFixed(1) : '0.0';
+          remainingElem.textContent = remainingValue;
+        }
         if (speedElem) speedElem.textContent = progressData.speed ? progressData.speed.toFixed(1) : '0.0';
       }
     
@@ -1361,6 +1540,7 @@
             <span class="file-name">${filename}</span>
             <div class="file-status status-${status}">${status}</div>
           </div>
+          <div class="progress-bar"><div class="progress-fill"></div></div>
           <div class="file-actions"></div>
         `;
         return jobItem;
@@ -1375,17 +1555,19 @@
         statusEl.textContent = status.charAt(0).toUpperCase() + status.slice(1);
         const actions = jobItem.querySelector('.file-actions');
         if (status === 'processing') {
-          progressFill.style.width = '0%';
+          if (progressFill) progressFill.style.width = '0%';
           actions.innerHTML = '';
         } else if (status === 'uploaded') {
-          progressFill.style.width = '100%';
+          if (progressFill) progressFill.style.width = '100%';
           actions.innerHTML = `<p style="color:var(--info)">File uploaded successfully. Translation started automatically.</p>`;
         } else if (status === 'completed') {
-          progressFill.style.width = '100%';
+          if (progressFill) progressFill.style.width = '100%';
           actions.innerHTML = `<p style="color:var(--success)">Translation completed: ${details.outPath || ''}</p>`;
         } else if (status === 'error') {
-          progressFill.style.width = '100%';
-          progressFill.style.backgroundColor = 'var(--error)';
+          if (progressFill) {
+            progressFill.style.width = '100%';
+            progressFill.style.backgroundColor = 'var(--error)';
+          }
           actions.innerHTML = `<p style="color:var(--error)">Error: ${details.error || ''}</p>`;
         }
       }
@@ -1663,7 +1845,6 @@
       transcribePathBtn.addEventListener('click', async () => {
         let p = localPathInput.value.trim();
         const model = document.getElementById('modelSelect').value;
-        const concurrency = parseInt(document.getElementById('concurrencySelect').value);
         
         // Only process direct paths, not uploaded files (since they're auto-transcribed)
         if (!p) { 
@@ -1674,7 +1855,7 @@
         transcribePathBtn.disabled = true;
         transcribePathBtn.textContent = 'Starting...';
         try {
-          const r = await fetch('/api/start', { method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify({ inputPath: p, model, concurrency }) });
+          const r = await fetch('/api/start', { method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify({ inputPath: p, model }) });
           if (!r.ok) { const d = await r.json(); throw new Error(d.error || 'Failed to start'); }
           localPathInput.value = '';
           showSuccess('Transcription started');

@@ -93,7 +93,7 @@ body {
 
 header {
   text-align: center;
-  margin-bottom: 40px;
+  margin: 0 0 40px 0;
 }
 
 h1 {
@@ -103,7 +103,7 @@ h1 {
   -webkit-background-clip: text;
   background-clip: text;
   color: transparent;
-  margin-bottom: 10px;
+  margin: 0 0 10px 0;
 }
 
 .subtitle {
@@ -115,7 +115,7 @@ h1 {
   display: flex;
   gap: 30px;
   flex-wrap: wrap;
-  margin-bottom: 40px;
+  margin: 0 0 40px 0;
 }
 
 .upload-section, .status-section {
@@ -167,7 +167,9 @@ h1 {
 }
 
 .card-body {
-  padding: 30px;
+  padding: 20px;
+  display: flex;
+  flex-direction: column;
 }
 
 .input {
@@ -193,9 +195,9 @@ h1 {
 
 .btn {
   display: inline-flex;
-  items-center: center;
+  align-items: center;
   justify-content: center;
-  border-radius: var(--radius);
+  border-radius: 12px;
   font-size: 0.875rem;
   font-weight: 500;
   transition: all 0.2s;
@@ -203,6 +205,8 @@ h1 {
   border: none;
   padding: 10px 16px;
   gap: 8px;
+  min-height: 44px;
+  box-sizing: border-box;
 }
 
 .btn-primary {
@@ -239,6 +243,7 @@ h1 {
 .file-list {
   max-height: 500px;
   overflow-y: auto;
+  flex: 1;
 }
 
 .file-item {
@@ -246,13 +251,14 @@ h1 {
   flex-direction: column;
   padding: 20px;
   border-bottom: 1px solid hsl(var(--border));
+  margin: 0;
 }
 
 .file-info {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-bottom: 12px;
+  margin: 0 0 12px 0;
 }
 
 .file-name {
@@ -292,7 +298,7 @@ h1 {
   background-color: hsl(var(--muted));
   border-radius: 9999px;
   overflow: hidden;
-  margin-top: 8px;
+  margin: 8px 0 0 0;
 }
 
 .progress-fill {
@@ -304,18 +310,20 @@ h1 {
 }
 
 .file-actions {
-  margin-top: 15px;
+  margin: 15px 0 0 0;
 }
 
 .action-btn {
   padding: 6px 12px;
-  border-radius: var(--radius);
+  border-radius: 12px;
   font-size: 0.8125rem;
   font-weight: 500;
   cursor: pointer;
   border: none;
   background-color: hsl(var(--secondary));
   color: hsl(var(--secondary-foreground));
+  min-height: 36px;
+  box-sizing: border-box;
 }
 
 .action-btn:hover {
@@ -326,6 +334,12 @@ h1 {
   text-align: center;
   padding: 40px;
   color: hsl(var(--muted-foreground));
+  margin: 0;
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
 }
 
 .empty-state i {
@@ -335,18 +349,17 @@ h1 {
 }
 
 .path-input-section {
-  margin-top: 20px;
+  margin: 20px 0 0 0;
 }
 
 .path-input-section input {
-  margin-bottom: 15px;
+  margin: 0 0 15px 0;
 }
 
 .language-selects {
   display: flex;
   gap: 10px;
-  margin-top: 10px;
-  margin-bottom: 15px;
+  margin: 10px 0 15px 0;
 }
 
 .language-selects select {
@@ -363,7 +376,7 @@ h1 {
   border: 1px solid #0ea5e9;
   border-radius: var(--radius);
   padding: 15px;
-  margin-bottom: 20px;
+  margin: 0 0 20px 0;
   color: #0c4a6e;
   font-weight: 500;
 }
@@ -373,7 +386,7 @@ h1 {
   justify-content: space-between;
   font-size: 0.9em;
   color: hsl(var(--muted-foreground));
-  margin-top: 5px;
+  margin: 5px 0 0 0;
 }
 
 .progress-time, .progress-speed {
@@ -383,11 +396,25 @@ h1 {
 .control-buttons {
   display: flex;
   gap: 10px;
-  margin-top: 20px;
+  margin: 0;
+  flex-shrink: 0;
 }
 
 .control-buttons .btn {
   flex: 1;
+  min-height: 44px;
+}
+
+.file-picker-buttons {
+  display: flex;
+  gap: 10px;
+  margin: 15px 0 0 0;
+  flex-shrink: 0;
+}
+
+.file-picker-buttons .btn {
+  flex: 1;
+  min-height: 44px;
 }
 
 @media (max-width: 860px) {
@@ -397,5 +424,15 @@ h1 {
   
   .upload-section, .status-section {
     min-width: 100%;
+  }
+  
+  .control-buttons,
+  .file-picker-buttons {
+    flex-direction: column;
+  }
+  
+  .control-buttons .btn,
+  .file-picker-buttons .btn {
+    width: 100%;
   }
 }

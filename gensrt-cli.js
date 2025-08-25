@@ -1,3 +1,4 @@
+// transcriber.js
 import path from "path";
 import { promises as fs } from "fs";
 import { spawn } from "child_process";
@@ -14,8 +15,7 @@ const ffprobePath = ffprobeInstaller.path;
 // CLI argument parsing
 const args = process.argv.slice(2);
 const inputPath = args[0];
-const modelFlagIndex = args.indexOf("--model");
-const modelName = modelFlagIndex !== -1 ? args[modelFlagIndex + 1] : null;
+const modelName = args.includes("--model") ? args[args.indexOf("--model") + 1] : null;
 
 if (!inputPath || !modelName) {
   console.error(chalk.red("Usage: node transcriber.js /path/to/media --model <modelName>"));
@@ -35,7 +35,7 @@ try {
 const config = {
   sampleRate: 16000,
   featDim: 80,
-  bufferSizeInSeconds: 30, // Reduced from 60 to 30 seconds to decrease memory usage
+  bufferSizeInSeconds: 30,
   vad: {
     sileroVad: {
       model: path.join(model.modelDir, "silero_vad.onnx"),
@@ -46,30 +46,26 @@ const config = {
     },
     sampleRate: 16000,
     debug: false,
-    numThreads: 1, // Keep at 1 for VAD to reduce CPU usage
+    numThreads: 1,
   },
 };
 
-function createRecognizer() {
-  return model.createRecognizer({
-    sampleRate: config.sampleRate,
-    featDim: config.featDim,
-    modelDir: model.modelDir,
-  });
-}
+const createRecognizer = () => model.createRecognizer({
+  sampleRate: config.sampleRate,
+  featDim: config.featDim,
+  modelDir: model.modelDir,
+});
 
-function createVad() {
-  return new sherpa_onnx.Vad(config.vad, config.bufferSizeInSeconds);
-}
+const createVad = () => new sherpa_onnx.Vad(config.vad, config.bufferSizeInSeconds);
 
-function formatTime(t) {
+const formatTime = (t) => {
   const intPart = Math.floor(t);
   const ms = Math.floor((t % 1) * 1000);
-  const h = Math.floor(intPart / 3600).toString().padStart(2, "0");
-  const m = Math.floor((intPart % 3600) / 60).toString().padStart(2, "0");
-  const s = (intPart % 60).toString().padStart(2, "0");
-  return `${h}:${m}:${s},${ms.toString().padStart(3, "0")}`;
-}
+  const h = String(Math.floor(intPart / 3600)).padStart(2, "0");
+  const m = String(Math.floor((intPart % 3600) / 60)).padStart(2, "0");
+  const s = String(intPart % 60).padStart(2, "0");
+  return `${h}:${m}:${s},${String(ms).padStart(3, "0")}`;
+};
 
 class Segment {
   constructor(start, duration, text) {
@@ -85,12 +81,12 @@ class Segment {
   }
 }
 
-function mergeSegments(segments, maxDuration = 15, maxPause = 0.5) {
+const mergeSegments = (segments, maxDuration = 15, maxPause = 0.5) => {
   if (!segments.length) return [];
   const merged = [];
   let current = new Segment(segments[0].start, segments[0].duration, segments[0].text);
-  for (let i = 1; i < segments.length; i++) {
-    const next = segments[i];
+  
+  for (const next of segments.slice(1)) {
     const pause = next.start - current.end;
     if (pause >= 0 && current.duration + next.duration <= maxDuration && pause < maxPause) {
       current.duration = next.end - current.start;
@@ -102,30 +98,27 @@ function mergeSegments(segments, maxDuration = 15, maxPause = 0.5) {
   }
   merged.push(current);
   return merged;
-}
+};
 
-async function saveSrt(segments, outPath) {
+const saveSrt = async (segments, outPath) => {
   if (!segments || !segments.length) return;
   segments.sort((a, b) => a.start - b.start);
   const merged = mergeSegments(segments);
   const srtContent = merged.map((s, i) => `${i + 1}\n${s.toString()}`).join("\n\n");
   await fs.writeFile(outPath, srtContent, "utf-8");
-}
+};
 
-function safeFree(obj) {
+const safeFree = (obj) => {
   try {
-    if (!obj) return;
-    if (typeof obj.free === "function") obj.free();
-    else if (typeof obj.delete === "function") obj.delete();
-    else if (typeof obj.destroy === "function") obj.destroy();
+    if (obj && typeof obj.free === "function") obj.free();
   } catch {}
-}
+};
 
-async function getAudioFiles(inputPath) {
+const getAudioFiles = async (inputPath) => {
   const stats = await fs.stat(inputPath);
   const isDirectory = stats.isDirectory();
   const audioExt = new Set([".wav", ".mp3", ".flac", ".m4a", ".ogg", ".mp4", ".mkv", ".mov", ".avi", ".webm"]);
-  let filesToProcess = [];
+  const filesToProcess = [];
 
   if (isDirectory) {
     const entries = await fs.readdir(inputPath);
@@ -150,30 +143,25 @@ async function getAudioFiles(inputPath) {
       await fs.access(srtPath);
       console.log(chalk.yellow(`- Skipping ${path.basename(inputPath)} (SRT already exists)`));
     } catch {
-      filesToProcess = [inputPath];
+      filesToProcess.push(inputPath);
     }
   }
   return filesToProcess;
-}
+};
 
-async function getDuration(inputFile) {
-  return new Promise((resolve, reject) => {
-    const ffprobe = spawn(ffprobePath, [
-      "-v",
-      "error",
-      "-show_entries",
-      "format=duration",
-      "-of",
-      "default=noprint_wrappers=1:nokey=1",
-      inputFile,
-    ]);
-    let data = "";
-    ffprobe.stdout.on("data", (chunk) => (data += chunk));
-    ffprobe.on("close", () => resolve(parseFloat(data)));
-  });
-}
+const getDuration = (inputFile) => new Promise((resolve, reject) => {
+  const ffprobe = spawn(ffprobePath, [
+    "-v", "error",
+    "-show_entries", "format=duration",
+    "-of", "default=noprint_wrappers=1:nokey=1",
+    inputFile,
+  ]);
+  let data = "";
+  ffprobe.stdout.on("data", (chunk) => (data += chunk));
+  ffprobe.on("close", () => resolve(parseFloat(data)));
+});
 
-async function processFile(inputFile) {
+const processFile = async (inputFile) => {
   const filename = path.basename(inputFile);
   const outPath = inputFile.replace(/\.[^.]*$/, ".srt");
 
@@ -200,18 +188,7 @@ async function processFile(inputFile) {
   });
 
   return new Promise((resolve, reject) => {
-    let ffmpeg;
-    try {
-      ffmpeg = spawn(ffmpegPath, ["-i", inputFile, "-f", "s16le", "-ac", "1", "-ar", config.vad.sampleRate.toString(), "-"]);
-    } catch (spawnError) {
-      progressBar.stop();
-      safeFree(vad);
-      safeFree(recognizer);
-      safeFree(buffer);
-      const errorMsg = `Failed to spawn FFmpeg: ${spawnError.message}`;
-      console.error(chalk.red(`\n❌ Error processing ${filename}: ${errorMsg}`));
-      return reject(new Error(errorMsg));
-    }
+    const ffmpeg = spawn(ffmpegPath, ["-i", inputFile, "-f", "s16le", "-ac", "1", "-ar", config.vad.sampleRate.toString(), "-"]);
 
     ffmpeg.stdout.on("data", (chunk) => {
       const sampleCount = Math.floor(chunk.length / 2);
@@ -311,8 +288,9 @@ async function processFile(inputFile) {
       reject(err);
     });
   });
-}
-async function main() {
+};
+
+const main = async () => {
   try {
     console.log(chalk.blue("🔍 Searching for files to process..."));
     const filesToProcess = await getAudioFiles(inputPath);
@@ -344,6 +322,6 @@ async function main() {
     }
     process.exit(1);
   }
-}
+};
 
 main();

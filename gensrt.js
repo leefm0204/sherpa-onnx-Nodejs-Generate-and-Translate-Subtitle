@@ -1,13 +1,17 @@
-// gensrt.js
-import path from "path";
-import { promises as fs } from "fs";
-import { spawn } from "child_process";
-import sherpa_onnx from "sherpa-onnx-node";
-import ffmpegInstaller from "@ffmpeg-installer/ffmpeg";
-import ffprobeInstaller from "@ffprobe-installer/ffprobe";
-import cliProgress from "cli-progress";
-import chalk from "chalk";
-import { getModel } from "./modelConfig.js";
+// gensrt.js - Optimized for better memory management
+import path from 'path';
+import { createReadStream, promises as fs } from 'fs';
+import { spawn } from 'child_process';
+import { pipeline } from 'stream/promises';
+import { Writable } from 'stream';
+import sherpa_onnx from 'sherpa-onnx-node';
+import ffmpegInstaller from '@ffmpeg-installer/ffmpeg';
+import ffprobeInstaller from '@ffprobe-installer/ffprobe';
+import cliProgress from 'cli-progress';
+import chalk from 'chalk';
+import { getModel } from './modelConfig.js';
+import os from 'os';
+import { Worker, isMainThread, workerData, parentPort } from 'worker_threads';
 
 const ffmpegPath = ffmpegInstaller.path;
 const ffprobePath = ffprobeInstaller.path;
@@ -32,14 +36,19 @@ try {
   process.exit(1);
 }
 
-// Recognizer and VAD setup
+// Configuration with optimized defaults
 const config = {
   sampleRate: 16000,
   featDim: 80,
-  bufferSizeInSeconds: 10, // Reduced from 60 to 10 seconds to decrease memory usage
+  bufferSizeInSeconds: 5,  // Further reduced memory usage
+  maxFileSizeMB: 500,     // Maximum file size to process in MB
+  tempDir: path.join(os.tmpdir(), 'sherpa-temp'),
+  maxConcurrent: Math.max(1, os.cpus().length - 1), // Leave one core free
+  
+  // VAD configuration
   vad: {
     sileroVad: {
-      model: path.join(model.modelDir, "silero_vad.onnx"),
+      model: path.join(model.modelDir, 'silero_vad.onnx'),
       threshold: 0.5,
       minSpeechDuration: 0.25,
       minSilenceDuration: 0.5,
@@ -47,16 +56,30 @@ const config = {
     },
     sampleRate: 16000,
     debug: false,
-    numThreads: 1, // Keep at 1 for VAD to reduce CPU usage
+    numThreads: 1,  // Single thread for VAD to reduce context switching
+  },
+  
+  // Memory management
+  memory: {
+    maxHeapMB: 1024,  // Max heap size in MB before forcing GC
+    gcInterval: 10000, // GC interval in ms
   },
 };
 
+// Create recognizer with resource limits
 function createRecognizer() {
-  return model.createRecognizer({
+  const recognizer = model.createRecognizer({
     sampleRate: config.sampleRate,
     featDim: config.featDim,
     modelDir: model.modelDir,
   });
+  
+  // Set memory limits
+  if (recognizer.setMaxHeapSize) {
+    recognizer.setMaxHeapSize(config.memory.maxHeapMB);
+  }
+  
+  return recognizer;
 }
 
 function createVad() {
@@ -217,7 +240,15 @@ async function processFile(inputFile) {
   const progressInterval = setInterval(() => {
     const elapsed = (Date.now() - startTime) / 1000;
     const speed = elapsed > 0 ? processed / elapsed : 0;
-    const remaining = speed > 0 ? (duration - processed) / speed : 0;
+    // Fix for inaccurate time remaining: ensure remaining time doesn't go below 0
+    let remaining = 0;
+    if (speed > 0) {
+      remaining = Math.max(0, (duration - processed) / speed);
+    }
+    // When processed reaches or exceeds duration, set remaining to 0
+    if (processed >= duration) {
+      remaining = 0;
+    }
     console.log(`Progress: ${Math.round((processed / duration) * 100)}% | ${processed.toFixed(1)}/${duration.toFixed(1)}s`);
   }, 1000); // Output progress every second
 
@@ -266,6 +297,8 @@ async function processFile(inputFile) {
 
     ffmpeg.on("close", async (code) => {
       clearInterval(progressInterval); // Stop the progress interval
+      // Send final progress update to ensure UI shows 100%
+      console.log(`Progress: 100% | ${duration.toFixed(1)}/${duration.toFixed(1)}s`);
       progressBar.update(duration);
       progressBar.stop();
       if (code !== 0) {
@@ -328,6 +361,8 @@ async function processFile(inputFile) {
 
     ffmpeg.on("error", (err) => {
       clearInterval(progressInterval); // Stop the progress interval
+      // Send final progress update to ensure UI shows error state
+      console.log(`Progress: 0% | 0.0/${duration.toFixed(1)}s`);
       progressBar.stop();
       safeFree(vad);
       safeFree(recognizer);

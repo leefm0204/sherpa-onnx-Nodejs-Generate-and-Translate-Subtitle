@@ -107,8 +107,18 @@ async function translateFile(filePath, sourceLang, tgtLang, index, total) {
     const extension = path.extname(filePath);
     const baseName = path.basename(filePath, extension);
 
-    // output file follows media base name + lang
-    const outFile = path.join(path.dirname(filePath), `${baseName}.${tgtLang}.srt`);
+    // Save translated SRT files directly to /sdcard/Download directory
+    // Sanitize and truncate filename to prevent issues with long filenames or special characters
+    let safeBaseName = baseName.replace(/[<>:"/\\|?*\x00-\x1f]/g, '_'); // Replace problematic ASCII characters
+    // Truncate to a safe length while preserving Unicode characters
+    if (Buffer.byteLength(safeBaseName, 'utf8') > 150) {
+        // Gradually trim the string to fit within the byte limit
+        while (Buffer.byteLength(safeBaseName, 'utf8') > 150 && safeBaseName.length > 0) {
+            safeBaseName = safeBaseName.slice(0, -1);
+        }
+    }
+    const srtFilename = `${safeBaseName}-${tgtLang}.srt`;
+    const outFile = path.join("/sdcard/Download", srtFilename);
 
     try {
         await fs.access(outFile);
@@ -132,8 +142,9 @@ async function translateFile(filePath, sourceLang, tgtLang, index, total) {
 
         try {
             const res = await gtxTranslate(chunk.trim(), tgtLang, sourceLang);
-            for (const [k, t] of res.split("\n").entries()) {
-                if (indices[k] !== undefined) entries[indices[k]].text = t;
+            const lines = res.split("\n");
+            for (let k = 0; k < indices.length && k < lines.length; k++) {
+                if (indices[k] !== undefined) entries[indices[k]].text = lines[k];
             }
         } catch (error) {
             console.error(`⚠️  ${error}`);
@@ -148,6 +159,7 @@ async function translateFile(filePath, sourceLang, tgtLang, index, total) {
         console.log(`✅ Saved: ${path.basename(outFile)}`);
     } catch (error) {
         console.error(`❌ Failed to write ${outFile}:`, error.message);
+        throw error;
     }
 
     return { skipped: false, outPath: outFile };
@@ -158,7 +170,7 @@ async function main() {
     console.log(`Starting translation with path: ${pathArgument}, source: ${sourceLang}, target: ${tgtLang}`);
 
     if (!pathArgument || !sourceLang || !tgtLang) {
-        console.error("❌ Usage: node gtx-srt.js /path/to/file/or/folder sourceLang targetLang");
+        console.error("❌ Usage: node srt-gtk.js /path/to/file/or/folder sourceLang targetLang");
         process.exit(1);
     }
 
@@ -207,7 +219,11 @@ async function main() {
         }
         
         index++;
-        await translateFile(file, sourceLang, tgtLang, index, total);
+        try {
+            await translateFile(file, sourceLang, tgtLang, index, total);
+        } catch (error) {
+            console.error(`❌ Failed to translate ${path.basename(file)}:`, error.message);
+        }
         
         // If cancelled during processing, exit
         if (cancelled) {
