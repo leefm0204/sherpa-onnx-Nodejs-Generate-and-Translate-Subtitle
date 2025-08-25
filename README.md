@@ -1,5 +1,7 @@
 # Nodejs Sherpa-Onnx Subtitle Generator & Translator
 
+![Screenshot_20250825_181855_com kiwibrowser browser](https://github.com/user-attachments/assets/f4711c6c-5286-4d8b-bb08-b62b340b2fc9)
+
 Generate and translate subtitles using Sherpa-Onnx node-addon-api that are 2 to 3 times faster than using python and translate subtitle using Google Translate.
 
 ## Features
@@ -30,7 +32,6 @@ Generate and translate subtitles using Sherpa-Onnx node-addon-api that are 2 to 
 - Process cancellation support
 - File status tracking
 - Direct path processing and file upload capabilities
-- Parallel processing with configurable concurrency
 
 ##
 
@@ -46,14 +47,19 @@ export LD_LIBRARY_PATH=$PWD/node_modules/sherpa-onnx-linux-arm64:$LD_LIBRARY_PAT
 for use with commandline
 
 ```bash
-# Direct usage
 node gensrt-cli.js /path/to/media/folder --model <modelName>
-
+```
 Example usage:
 ```bash
 node gensrt-cli.js /path/to/media/folder --model senseVoice
-node gensrt-cli.js /path/to/media/folder --model transducer
+```
+```bash
 node gensrt-cli.js /path/to/media/folder --model nemoCtc
+```
+
+```bash
+node gensrt-cli.js /path/to/media/folder --model transducer
+```
 
 The CLI script provides progress bars and real-time feedback during the transcription process.
 
@@ -68,6 +74,7 @@ Example - support auto detect language of srt, or specify language of srt used.
 ```bash
 node srt-gtk.js /path/to/srt/folder auto zh
 ```
+
 ```bash
 node srt-gtk.js /path/to/srt/folder en zh
 ```
@@ -81,10 +88,5 @@ Start the server:
 node --expose-gc server.js
 ```
 
-Access the web interface at `http://localhost:3000` to manage transcription and translation p.
+Access the web interface at `http://localhost:3000` to manage transcription and translation
 
-## System Requirements
-
-- Node.js 14.0 or higher
-- FFmpeg and FFprobe (automatically installed via npm dependencies)
-- Model folder need to place in same folder with nodejs script.
