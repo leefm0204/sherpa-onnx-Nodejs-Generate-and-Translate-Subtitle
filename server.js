@@ -7,7 +7,7 @@ import { fileURLToPath } from 'node:url';
 import express from 'express';
 import { WebSocketServer } from 'ws';
 
-import { uploadSingleFile, cleanupUploadedFiles, uploadsDir } from './fileupload.js';
+import { uploadSingleFile, cleanupUploadedFiles } from './fileupload.js';
 import { getCachedSystemInfo } from './cache-optimization.js';
 
 // Enable explicit garbage collection
@@ -21,20 +21,7 @@ if (global.gc) {
 let activeTranscriptionProcesses = new Map(); // Map to track multiple processes
 let activeTranslationProcesses = new Map(); // Map to track multiple translation processes
 
-// Function to clean uploads folder
-async function cleanUploadsFolder() {
-  try {
-    const files = await fs.readdir(uploadsDir);
-    for (const file of files) {
-      const filePath = path.join(uploadsDir, file);
-      await fs.unlink(filePath);
-      console.log(`Cleaned up file from uploads folder: ${file}`);
-    }
-    console.log('Uploads folder cleaned successfully');
-  } catch (error) {
-    console.warn('Error cleaning uploads folder:', error.message);
-  }
-}
+
 
 // Track uploaded files for cleanup and to determine SRT output location
 let uploadedFiles = new Set();
@@ -704,8 +691,6 @@ app.post('/api/start', async (request, res) => {
   }
 });
 
-
-
 // -------------------- Translation endpoint --------------------
 app.post('/api/translate', async (request, res) => {
   const { srtPath, sourceLang, targetLang } = request.body;
@@ -932,7 +917,7 @@ function startHeartbeat() {
 }
 
 // Rate limiting
-const rateLimit = (ws, type) => {
+const rateLimit = (ws) => {
   const client = clients.get(ws);
   if (!client) return false;
   
@@ -953,7 +938,7 @@ const rateLimit = (ws, type) => {
 };
 
 // Handle stop transcription
-async function handleStopTranscription(ws, data) {
+async function handleStopTranscription(ws) {
   const client = clients.get(ws);
   if (!client) return;
   
@@ -979,7 +964,7 @@ async function handleStopTranscription(ws, data) {
 }
 
 // Handle stop translation
-async function handleStopTranslation(ws, data) {
+async function handleStopTranslation(ws) {
   const client = clients.get(ws);
   if (!client) return;
   
