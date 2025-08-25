@@ -1,5 +1,5 @@
 {
-  "name": "Nodejs Subtitle Generator & Translator",
+  "name": "Sherpa-Onnx Nodejs Subtitle Generator & Translator",
   "version": "1.0.0",
   "description": "Subtitle Generator & Translator using commandline and nodejs server",
   "main": "server.js",
